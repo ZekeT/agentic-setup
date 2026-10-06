@@ -5,9 +5,9 @@ skills_installer = "1.5.26"
 id = "matt-skills"
 kind = "skills"
 source = "mattpocock/skills"
-version = "959a8e9f1edc3adbe2f7e3054bb6fbefa6696260"
+version = "4588b32ecab9ecc9fc8cc6b6c5e7d675b6004b0d"
 required = true
-skills = ["setup-matt-pocock-skills", "ask-matt", "grill-with-docs", "grilling", "grill-me", "domain-modeling", "codebase-design", "writing-for-agents", "to-spec", "to-tickets", "implement", "tdd", "code-review", "diagnosing-bugs", "research", "prototype", "wayfinder"]
+skills = ["setup-matt-pocock-skills", "ask-matt", "grill-with-docs", "grilling", "grill-me", "domain-modeling", "codebase-design", "writing-for-agents", "to-spec", "to-tickets", "implement", "tdd", "code-review", "diagnosing-bugs", "research", "prototype", "wayfinder", "implement-spec", "pr", "retro"]
 
 [[dependency]]
 id = "graft"
