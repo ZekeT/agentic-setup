@@ -4,6 +4,18 @@ Agentic Starter provides engineering invariants, navigation integration and safe
 
 ## Language
 
+**Feature milestone**:
+An agreed grouping of work toward a demonstrable feature outcome or coherent integration point, with explicit completion conditions. Its scope may be recalibrated with the user as implementation reveals new information; delivery alone does not establish review or acceptance.
+
+**Semantic review**:
+Independent assessment of whether a proposed change follows repository standards and satisfies its originating requirements. Standards and Spec are separate review axes; executing automated checks is a separate activity.
+
+**Mechanical bookkeeping**:
+Status, delivery-link, or evidence-pointer updates whose permitted scope and supporting evidence can be validated mechanically. Changes to requirements, policy, executable examples, or implementation are outside this category.
+
+**Behavioral review**:
+Independent examination and probing of changed behavior, failure paths, and nearby regressions, informed by recorded automated-check evidence. It is distinct from checking conformance to the originating spec or merely executing the existing test suite.
+
 **Maintainer checkout**:
 The starter's own source repository, where the starter's implementation is developed and released.
 _Avoid_: starter repo, source checkout
