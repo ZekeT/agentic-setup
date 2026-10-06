@@ -539,6 +539,14 @@ Updates never silently select latest. Review the proposed pin and apply it
 explicitly. Skills are staged with the pinned upstream skills installer and
 installed unchanged into project-local skill directories. Local modifications
 cause conflicts, not silent replacement. Global installations are untouched.
+
+The selected Matt skills also include `pr` for PR-body presentation and the
+explicitly invoked `retro` for session retrospectives. `implement-spec` is
+installed for evaluation; adopting its parallel integration-branch workflow
+requires a separate compatibility decision. Installation does not change the
+per-ticket workflow, human-directed corrections, or publication authorization.
+Upstream glossary references use the locations in `docs/agents/domain.md`.
+
 After updating, run doctor, starter self-tests in the starter checkout and the
 static evals; authenticated prompt evals remain optional. Failed installation
 leaves recorded dependency state unchanged; ordinary file-write errors roll back.
