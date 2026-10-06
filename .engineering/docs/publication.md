@@ -1,6 +1,6 @@
 # Publish accepted content
 
-The daily loop is `/implement` → `/review` → `/ship`. Implementation can commit
+The daily loop is `/implement` → `/review` → `/pr` → `/ship`. Implementation can commit
 locally. Review obtains independent proof and presents behavior, scope, findings,
 checks and gaps. After that presentation, `/ship` accepts the unchanged scope and
 authorizes remaining scoped commits, push and actual PR/MR creation. Missing
@@ -12,6 +12,30 @@ Publication consumes current verification instead of repeating semantic review o
 back to verification; changed acceptance scope or unresolved blockers goes back
 to review. Hooks are enforced. Hook mutations stop publication for reassessment.
 Unrelated working and staged changes remain in place.
+
+## Prepare the PR description
+
+Use Matt's unchanged `/pr` skill to draft the PR body from the accepted change
+and recorded evidence. Save it as repository-relative UTF-8 Markdown, for example
+`.engineering/state/verification/pr.md`. Describe actual checks, independent
+review and coverage gaps honestly; do not invent before/after evidence or rerun
+valid checks just to write the description. The skill writes prose; it does not
+publish or authorize publication.
+
+Present the draft and record it with the acceptance summary using `--body-file`
+below. The harness stores the exact text as `pr_body` in the saved review, so a
+later edit to the draft file cannot change what is published. Alternatively,
+include nonempty `pr_body` directly in the acceptance JSON; do not supply both.
+The body is passed unchanged to GitHub, GitLab, or the configured provider. No
+second generated template or automatic evidence appendix replaces it. Proof,
+blocker, scope and authorization gates still run independently of its prose.
+
+A new draft requires presenting and recording the revised publication plan;
+stored authorization for the old plan does not transfer. This does not itself
+rerun unchanged code verification. Missing bodies stop PR-authorized runs before
+commits or pushes. Commit-only and push-only plans may omit the body. Existing
+saved reviews without a body must be updated before PR publication. The GitHub
+PR template remains available for manual authoring; the harness does not load it.
 
 ## Record the presented review
 
@@ -45,7 +69,7 @@ Store unresolved material findings in `blockers`, and present a fresh summary
 after authorized corrections and reverification.
 
 ```bash
-./engineering publish review --change example --plan .engineering/state/verification/acceptance.json
+./engineering publish review --change example --plan .engineering/state/verification/acceptance.json --body-file .engineering/state/verification/pr.md
 ./engineering publish preflight --change example
 # Only after the corresponding human authorization:
 ./engineering publish run --change example --authorize pr
@@ -80,7 +104,7 @@ Other providers, including Bitbucket, use an explicit executable argument array,
 for example `"provider": ["project-publish"]`. Inspect this project-owned adapter
 before execution. It is invoked without a shell as `project-publish --request
 <temporary-json-file>`. The request contains the review fields, exact committed
-`head` and a `body_file` containing scope, checks, independent summaries and gaps.
+`head` and a `body_file` containing the exact recorded PR description.
 The adapter receives an `action` field. For `"create"`, it must create the actual
 PR/MR and print only `{"url":"https://..."}` on success; a drafted body is
 insufficient. For `"lookup"`, it must read hosting state for the exact repository,

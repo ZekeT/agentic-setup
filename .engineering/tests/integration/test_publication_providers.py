@@ -6,7 +6,7 @@ import sys
 
 import pytest
 
-from .test_publication import STATE, publish, review
+from .test_publication import PR_BODY, STATE, publish, review
 from .test_publication import hosting as hosting
 from .test_verification import git
 from .test_verification import repo as repo
@@ -19,7 +19,8 @@ pytestmark = pytest.mark.integration
 def test_builtin_provider_reconciles_uncertain_create(
     repo, hosting, monkeypatch, provider, tool, existing
 ):
-    review(repo, hosting, provider=provider)
+    expected_body = PR_BODY.replace("\n", "\r\n") + "\r\nUnicode: café\r\n"
+    review(repo, hosting, provider=provider, pr_body=expected_body)
     publish(repo, "run", "--authorize", "push")
     head = git(repo, "rev-parse", "HEAD")
     state = repo / STATE
@@ -53,6 +54,9 @@ def test_builtin_provider_reconciles_uncertain_create(
         "if sys.argv[2] == 'list':\n"
         "    print(receipt.read_text() if receipt.exists() else '[]')\n"
         "else:\n"
+        "    args = sys.argv[1:]\n"
+        "    body = pathlib.Path(args[args.index('--body-file') + 1]).read_bytes().decode('utf-8') if '--body-file' in args else args[args.index('--description') + 1]\n"
+        f"    pathlib.Path({str(state / 'provider-body')!r}).write_text(body)\n"
         f"    receipt.write_text({json.dumps([item])!r})\n"
         "    sys.exit(7)\n"
     )
@@ -61,6 +65,7 @@ def test_builtin_provider_reconciles_uncertain_create(
     result = publish(repo, "run", "--authorize", "pr", status=0 if existing else 1)
     if not existing:
         assert result["failed"] == "pr creation"
+        assert (state / "provider-body").read_bytes().decode("utf-8") == expected_body
     assert publish(repo, "run")["url"] == "https://hosting.invalid/pull/1"
     calls = [
         json.loads(line) for line in (state / "provider-calls").read_text().splitlines()

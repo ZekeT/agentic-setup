@@ -29,6 +29,9 @@ def add_parser(sub: Any) -> None:
         "--plan", help="Presented acceptance summary JSON (review only)"
     )
     parser.add_argument(
+        "--body-file", help="Repository-relative prepared PR Markdown (review only)"
+    )
+    parser.add_argument(
         "--authorize",
         choices=["commit", "push", "pr"],
         help="Explicit human scope; cumulative, never merge or force-push",
@@ -98,8 +101,16 @@ def validate_review(plan: dict[str, Any]) -> None:
         "provider",
         "title",
     }
-    if set(plan) != fields:
-        raise ValueError(f"Acceptance review requires exactly {sorted(fields)}")
+    if set(plan) not in (fields, fields | {"pr_body"}):
+        raise ValueError(
+            f"Acceptance review requires {sorted(fields)} and optional pr_body"
+        )
+    if "pr_body" in plan and (
+        not isinstance(plan["pr_body"], str)
+        or not plan["pr_body"].strip()
+        or "\x00" in plan["pr_body"]
+    ):
+        raise ValueError("Review pr_body must be nonempty text without NUL bytes")
     for field in fields - {"provider", "blockers"}:
         if not isinstance(plan[field], str) or not plan[field].strip():
             raise ValueError(f"Review {field} must be nonempty text")
@@ -154,14 +165,23 @@ def operate(root: Path, args: argparse.Namespace) -> int:
     completed: list[str] = []
     step = "preflight"
     try:
-        if bool(args.plan) != (args.operation == "review") or (
-            args.operation != "run" and args.authorize
+        if (
+            bool(args.plan) != (args.operation == "review")
+            or (args.operation != "run" and args.authorize)
+            or (args.body_file and args.operation != "review")
         ):
             raise ValueError(
-                "review requires only --plan; authorization applies only to run"
+                "review requires --plan; --body-file applies only to review; "
+                "authorization applies only to run"
             )
         if args.operation == "review":
             plan = json_object(safe_path(root, args.plan).read_bytes())
+            if args.body_file:
+                if "pr_body" in plan:
+                    raise ValueError("Provide pr_body or --body-file, not both")
+                plan["pr_body"] = (
+                    safe_path(root, args.body_file).read_bytes().decode("utf-8")
+                )
             validate_review(plan)
             data = current(root, args.change)
             if plan["snapshot"] != data["snapshot"]:
@@ -198,6 +218,11 @@ def operate(root: Path, args: argparse.Namespace) -> int:
             return 0
         step = "authorization"
         scope = authorize_scope(root, args.change, plan, args.authorize)
+        if scope == "pr" and "pr_body" not in plan:
+            raise ValueError(
+                "Missing PR body: prepare it with /pr and record the presented "
+                "draft as pr_body using publish review before publishing"
+            )
         step = "commit"
         commit_scope(root, data, plan["title"])
         completed.append("commit")
@@ -218,7 +243,7 @@ def operate(root: Path, args: argparse.Namespace) -> int:
             url = find_pr(root, plan)
             if url is None:
                 step = "pr creation"
-                url = create_pr(root, plan, data)
+                url = create_pr(root, plan)
             completed.append("pr")
         print(
             json.dumps(

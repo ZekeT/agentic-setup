@@ -60,8 +60,10 @@ them. If the body needs the word "also", it is probably two commits.
 
 ## Pull requests
 
-The body is `.github/pull_request_template.md`, which GitHub loads automatically.
-Fill every section; delete one only with a one-line reason.
+Use Matt's unchanged `/pr` skill to prepare the body, then record the presented
+draft with `engineering publish review --body-file <path>` before `/ship`.
+Publication uses that exact description; see [publication](publication.md).
+`.github/pull_request_template.md` remains a fallback for manual GitHub authoring.
 
 **Title.** Same format as a commit subject. It becomes the squash-merge commit,
 so it is what `git log` shows on `main` forever.
@@ -83,7 +85,7 @@ relative to the trunk it will actually merge into.
 implementation commits and commit remaining accepted fixes, preserving unrelated
 local work. See [publication](publication.md) for preflight and provider setup.
 
-**The test evidence is the point.** `REVIEW.md` asks what verification proved; the template's "How this was tested" is where the author
+**The test evidence is the point.** `REVIEW.md` asks what verification proved; the PR body's evidence section is where the author
 answers it in advance. "Tested locally" is not an answer — name the tests, or
 record the manual steps and what was observed.
 

@@ -12,31 +12,11 @@ from .ownership import encoded, json_object
 from .source import git
 
 
-def body(plan: dict[str, Any], data: dict[str, Any]) -> str:
-    """Carry human-useful scope, observed checks, independent evidence and gaps."""
-    lines = [
-        plan["summary"],
-        "",
-        "## Scope",
-        *[f"- `{p}`" for p in data["inputs"]["plan"]["paths"]],
-        "",
-        "## Verification",
-    ]
-    lines += [
-        f"- `{' '.join(c['command'])}`: exit {c['exit_code']}" for c in data["checks"]
-    ]
-    for role, report in data["reports"].items():
-        lines += [f"- {role}: {report['verdict']} — {report['summary']}"]
-        lines += [f"  - Finding: {finding}" for finding in report["findings"]]
-        lines += [f"  - Not covered: {gap}" for gap in report["coverage_gaps"]]
-    return "\n".join(lines) + "\n"
-
-
-def create_pr(root: Path, plan: dict[str, Any], data: dict[str, Any]) -> str:
+def create_pr(root: Path, plan: dict[str, Any]) -> str:
     """Invoke actual provider creation; custom adapters return a JSON URL receipt."""
     with tempfile.TemporaryDirectory(prefix="engineering-pr-") as folder:
         description = Path(folder) / "body.md"
-        description.write_text(body(plan, data))
+        description.write_bytes(plan["pr_body"].encode("utf-8"))
         provider = plan["provider"]
         if provider == "github":
             command = [
@@ -68,7 +48,7 @@ def create_pr(root: Path, plan: dict[str, Any], data: dict[str, Any]) -> str:
                 "--title",
                 plan["title"],
                 "--description",
-                description.read_text(),
+                plan["pr_body"],
                 "--yes",
             ]
         else:
