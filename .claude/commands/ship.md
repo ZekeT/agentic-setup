@@ -13,6 +13,15 @@ actual PR/MR when blockers are resolved. Honor narrower requests and existing
 explicit authorization. Never infer publication permission from /implement.
 Never merge or force-push without separate specific authorization.
 
+Consume the Markdown draft prepared with Matt's unchanged /pr skill. If no draft
+exists, ask for /pr before PR publication; do not generate a competing body or
+wrap the skill. Present the draft and record it with the acceptance plan using
+engineering publish review --body-file <repository-relative-path>. The recorded
+text is frozen; do not silently replace it with later file edits. Record revised
+presented drafts before publication and honor authorization for that exact plan.
+Commit-only and push-only requests do not require a PR body. The GitHub template
+remains available for manual authoring.
+
 Use engineering publish preflight to check intended content/paths, current proof,
 comparison base, branch/remote and unresolved blockers. Preflight recomputes the
 tier floor for the current scope and refuses evidence whose tier is below it.

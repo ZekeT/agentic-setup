@@ -186,6 +186,7 @@ def test_generated_application_correction_and_failed_push_reuse(repo, hosting):
         "base": "main",
         "provider": hosting[1],
         "title": "feat: greet a trimmed name",
+        "pr_body": "## Summary\nGreet a trimmed name.\n\n## Evidence\nFixture checks passed; scripted attestations only.\n\n## Merge Danger\nReversible fixture change.\n",
     }
     (repo / STATE / "acceptance.json").write_text(json.dumps(acceptance))
     engineering(repo, "publish", "review", "--plan", f"{STATE}/acceptance.json")

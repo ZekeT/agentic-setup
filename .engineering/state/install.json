@@ -28,7 +28,7 @@
       "ownership": {
         "mode": "file"
       },
-      "upstream": "9f77b3bcd6f3748c55c91be127f7add4399e7821db4684ee24f40baae3863c8e"
+      "upstream": "50fcc2a42d9ec19bc1faab37465a1c4f642a0f8121d8ca9f4564fec501fd01d0"
     },
     ".claude/hooks/post_tool_lint.py": {
       "ownership": {
@@ -82,7 +82,7 @@
       "ownership": {
         "mode": "file"
       },
-      "upstream": "283533e65e71ae295c878133f320c66cf52ec3d3551f2fa3c3b57e1835d5fb1c"
+      "upstream": "818ed301158b329a16859fa006352fb1c2ffaa9a7a6e1d39361014e51183f1a5"
     },
     ".engineering/docs/maintainability.md": {
       "ownership": {
@@ -94,7 +94,7 @@
       "ownership": {
         "mode": "file"
       },
-      "upstream": "cb3692d8bfdb782d2d7a614ec987a77b7b08a5db2ba659150575493bbfa3e290"
+      "upstream": "a9dbcd8092054a4170f597cb020f5add03c74024135f36e452e0bbe08fccd7bc"
     },
     ".engineering/docs/testing.md": {
       "ownership": {
@@ -208,7 +208,7 @@
       "ownership": {
         "mode": "file"
       },
-      "upstream": "1c9c00fede8e1f6e1c0a897e3f5c8b1b210eb9b1169da7744a70627e557d2969"
+      "upstream": "02f7c8d6362747e1d545aba1d2942935548414e342c0458d9fabe123ade85a85"
     },
     ".engineering/engineering/publication_git.py": {
       "ownership": {
@@ -220,7 +220,7 @@
       "ownership": {
         "mode": "file"
       },
-      "upstream": "3f7ce180d1ec2ab72f5c3eb7af98ad0042003ac87258af34447a7ab2b122c6aa"
+      "upstream": "8b3a705287e5423eb5fb28905ea14bb996118d0fe7bba351a5799ec7fe3a0ce2"
     },
     ".engineering/engineering/registry.py": {
       "ownership": {

@@ -12,6 +12,11 @@ from .test_verification import repo as repo
 
 pytestmark = pytest.mark.integration
 STATE = ".engineering/state/verification"
+PR_BODY = (
+    "## Summary\n\nFixture behavior changes.\n\n"
+    "## Evidence\n\nmake check passed. No live provider tested.\n\n"
+    "## Merge Danger\n\nReversible fixture-only change.\n"
+)
 
 
 def publish(root, operation, *args, status=0, setup=""):
@@ -70,6 +75,7 @@ def review(repo, hosting, **overrides):
         "base": "main",
         "provider": hosting[1],
         "title": "feat: change fixture behavior",
+        "pr_body": PR_BODY,
         **overrides,
     }
     path = repo / STATE / "acceptance.json"
@@ -99,6 +105,7 @@ def test_committed_implementation_and_uncommitted_fix_publish_once(repo, hosting
     assert (repo / "unrelated.txt").read_text() == "working\n"
     assert (checkout / STATE / "calls").read_text() == "check\n"
     receipt = json.loads((repo / STATE / "created.json").read_text())
+    assert receipt["body"] == PR_BODY
     assert "make check" in receipt["body"]
     assert "No live provider tested" in receipt["body"]
     assert "unrelated.txt" not in receipt["body"]
