@@ -27,15 +27,19 @@ Read relevant feature instructions and ADRs as needed, not entire doc trees.
 ## Verification and human control
 
 Use targeted tests while building. Run `make fmt` before fresh independent
-maintainability review and behavioral verification. The verifier runs `make check`;
+native Standards/Spec review and behavioral verification. The implementer runs
+the full applicable suite once through `verify check`, including `make check`;
 it is non-mutating and authoritative. Required checks follow the installation
 role and path ownership in the verification guide.
 
-Reviewers are read-only and receive only a branch/ticket/spec/request pointer.
+Reviewers are read-only and receive requirement/content pointers and factual check evidence.
 Do not pass implementation-session reasoning or a self-review narrative to them.
 Plans declare a review tier at or above the computed floor; the tier sets the
-required reviewer roles. One fresh session may file both ordinary reports;
-sensitive changes need a separate fresh session per role, including security.
+required reviewer roles. Native Standards and Spec replace ticket-level harness maintainability review.
+Use a separate fresh session per role, including behavioral and security.
+Checkpoint all intended additions, deletions and modes before native review.
+Keep native orchestration unchanged and follow its scheduling restrictions.
+Captured content is read-only; mutating probes use disposable copies.
 Human review follows [REVIEW.md](REVIEW.md). Wait for human fix instructions;
 preserve settled decisions. Pause after two unsuccessful attempts at one finding
 or before undoing a settled decision; use focused `/grill-me` and record the
@@ -52,11 +56,13 @@ After implementation, automatically hand off to fresh independent reviewers when
 the runtime supports them. Keep pinned upstream skills unchanged. Their committed
 diff review alone cannot certify uncommitted work. Follow
 [verification evidence](.engineering/docs/verification.md): prepare exact scope,
-have the verifier run recorded checks, and record independent reports. `/review`
+run recorded checks, and record distinct independent reports. `/review`
 obtains missing/stale proof and reuses current evidence. If fresh reviewers are
 unavailable, report INCOMPLETE and give a fresh-session handoff; never self-certify.
 
-For carried snapshots only, the implementer may run `verify check`. A clean rebase
+The implementer may run the initial full applicable suite through `verify check`.
+Fresh behavioral inspection consumes its recorded results without repeating it.
+For carried snapshots only, existing review reports may accompany fresh checks. A clean rebase
 can carry independent reports through `verify prepare` when the own patches,
 plan, tools and checks are unchanged and upstream paths do not overlap scope or
 explicit inputs. Reports record `carried_from`; fresh checks are required before
@@ -66,7 +72,6 @@ relabel reports. Publication accepts current carried PASS evidence and still
 requires the remote base tip recorded at the latest prepare.
 
 ## Agent skills
-
 ### Issue tracker
 
 Local Markdown is the default, independent of Git hosting provider.

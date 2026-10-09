@@ -92,11 +92,33 @@ def prepare(root, status=0):
     )
 
 
+def checkpoint(root):
+    """Ordinary scoped commit before the fixture's native review."""
+    plan = json.loads((root / ".engineering/state/verification/plan.json").read_text())
+    paths = [
+        name
+        for name in plan["paths"]
+        if (root / name).exists() or git(root, "ls-files", "--", name)
+    ]
+    if git(root, "status", "--porcelain", "--", *paths):
+        git(root, "add", "--", *paths)
+        git(root, "commit", "--only", "-m", "scoped checkpoint", "--", *paths)
+
+
 def report(root, token, role, verdict="PASS", expected=0, reviewer=None):
+    native = {}
+    if role in ("standards", "spec"):
+        if expected == 0:
+            checkpoint(root)
+        native = {
+            "reviewed_commit": git(root, "rev-parse", "HEAD"),
+            "comparison_base": git(root, "rev-parse", "main"),
+        }
     path = root / ".engineering/state/verification/report.json"
     path.write_text(
         json.dumps(
             {
+                **native,
                 "snapshot": token,
                 "role": role,
                 "reviewer": reviewer or f"fresh-{role}-session",
@@ -121,13 +143,14 @@ def report(root, token, role, verdict="PASS", expected=0, reviewer=None):
 
 ROLES = {
     "documentation": ["behavioral"],
-    "ordinary": ["maintainability", "behavioral"],
-    "sensitive": ["maintainability", "behavioral", "security"],
+    "ordinary": ["standards", "spec", "behavioral"],
+    "sensitive": ["standards", "spec", "behavioral", "security"],
 }
 
 
 def complete(root):
     """Record every role the plan's tier requires, each from its own session."""
+    checkpoint(root)
     token = prepare(root)["snapshot"]
     cli(root, "check", "--change", "example", "--snapshot", token)
     plan = json.loads((root / ".engineering/state/verification/plan.json").read_text())
@@ -141,7 +164,7 @@ def test_reuse_across_sessions_and_content_preserving_commit(repo):
     complete(repo)
     assert cli(repo, "status", "--change", "example")["status"] == "PASS"
     git(repo, "add", "app.txt")
-    git(repo, "commit", "-m", "implementation")
+    git(repo, "commit", "--allow-empty", "-m", "implementation")
     assert cli(repo, "status", "--change", "example")["status"] == "PASS"
     assert prepare(repo)["status"] == "PASS"
     (repo / "app.txt").write_text("new correction\n")
@@ -170,8 +193,8 @@ def test_untracked_and_deleted_content_survives_commit(repo):
     (repo / "Makefile").write_text("check:\n\t@test -s new.txt\n")
     change_plan(repo, paths=["app.txt", "new.txt", "Makefile"], tier="sensitive")
     complete(repo)
-    git(repo, "add", "app.txt", "new.txt", "Makefile")
-    git(repo, "commit", "-m", "replace app")
+    git(repo, "add", "new.txt", "Makefile")
+    git(repo, "commit", "--allow-empty", "-m", "replace app")
     assert cli(repo, "status", "--change", "example")["status"] == "PASS"
 
 
@@ -187,7 +210,8 @@ def test_failed_checks_and_missing_security_cannot_pass(repo):
     change_plan(repo, tier="sensitive", tier_reason="Raised: handles credentials")
     token = prepare(repo)["snapshot"]
     cli(repo, "check", "--change", "example", "--snapshot", token)
-    report(repo, token, "maintainability")
+    report(repo, token, "standards")
+    report(repo, token, "spec")
     report(repo, token, "behavioral")
     result = cli(repo, "status", "--change", "example", status=1)
     assert result["missing"] == ["security"]
@@ -274,13 +298,14 @@ def test_missing_and_stale_reports_do_not_claim_verification(repo):
     token = prepare(repo)["snapshot"]
     result = report(repo, token, "behavioral", expected=1)
     assert "successful recorded" in result["error"]
-    report(repo, token, "maintainability")
+    report(repo, token, "standards")
+    report(repo, token, "spec")
     result = cli(repo, "status", "--change", "example", status=1)
     assert "behavioral" in result["missing"]
     assert "Fresh read-only reviewer" in result["handoff"]
     (repo / "app.txt").write_text("correction\n")
     prepare(repo)
-    assert "STALE report" in report(repo, token, "maintainability", expected=1)["error"]
+    assert "STALE report" in report(repo, token, "standards", expected=1)["error"]
 
 
 def test_status_and_reprepare_do_not_rerun_checks(repo):
@@ -289,7 +314,7 @@ def test_status_and_reprepare_do_not_rerun_checks(repo):
     )
     change_plan(repo, paths=["app.txt", "Makefile"], tier="sensitive")
     complete(repo)
-    checkout = repo / prepare(repo)["checkout"]
+    checkout = repo / prepare(repo)["check_checkout"]
     for _ in range(2):
         assert cli(repo, "status", "--change", "example")["status"] == "PASS"
         assert prepare(repo)["status"] == "PASS"
@@ -335,8 +360,9 @@ def test_checkout_contains_intended_layers_and_preserves_index(repo):
     )
     before = git(repo, "diff", "--cached", "--binary")
     working = git(repo, "diff", "--binary")
-    token = complete(repo)
-    assert cli(repo, "status", "--change", "example")["snapshot"] == token
+    token = prepare(repo)["snapshot"]
+    cli(repo, "check", "--change", "example", "--snapshot", token)
+    assert cli(repo, "status", "--change", "example", status=1)["snapshot"] == token
     checkout = repo / prepare(repo)["checkout"]
     assert (checkout / ".gitignore").read_text() == ".engineering/state/verification/\n"
     assert git(repo, "diff", "--cached", "--binary") == before
@@ -367,7 +393,7 @@ def test_review_checkout_mutation_invalidates_reports_and_reprepare_recovers(rep
     assert (
         cli(repo, "status", "--change", "example", status=1)["status"] == "INCOMPLETE"
     )
-    assert report(repo, token, "maintainability", expected=1)["status"] == "INCOMPLETE"
+    assert report(repo, token, "standards", expected=1)["status"] == "INCOMPLETE"
     assert prepare(repo)["status"] == "INCOMPLETE"
     assert (repo / "app.txt").read_text() == "after\n"
 
@@ -426,13 +452,16 @@ def test_bounded_correction_preserves_history_but_requires_fresh_proof(repo):
     cli(repo, "check", "--change", "example", "--snapshot", current["snapshot"])
     report(repo, current["snapshot"], "behavioral")
     assert cli(repo, "status", "--change", "example", status=1)["missing"] == [
-        "maintainability"
+        "standards",
+        "spec",
     ]
-    report(repo, current["snapshot"], "maintainability")
+    report(repo, current["snapshot"], "standards")
+    report(repo, current["snapshot"], "spec")
     assert prepare(repo)["status"] == "PASS"
     assert prepare(repo)["previous_evidence"] == current["previous_evidence"]
     assert json.loads(history.read_text()) == previous
-    assert git(repo, "diff", "--name-only") == "app.txt"
+    assert git(repo, "diff", "--name-only") == ""
+    assert git(repo, "show", "HEAD:app.txt") == "authorized correction"
 
 
 def commit_base_role(root, role):

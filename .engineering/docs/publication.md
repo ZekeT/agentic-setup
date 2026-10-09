@@ -7,6 +7,12 @@ authorizes remaining scoped commits, push and actual PR/MR creation. Missing
 review is not supplied by invoking ship. Narrower requests limit these actions;
 merge and force-push require separate authorization.
 
+Publication requires current schema-3 verification, including native Standards
+and Spec evidence for ordinary/sensitive changes. Those reports identify the
+reviewed checkpoint commit and comparison context; uncovered later edits cannot
+publish. Historical schema-1/2 evidence needs fresh proof, while interrupted
+publication records remain available for remote reconciliation.
+
 Publication consumes current verification instead of repeating semantic review or
 `make check`. Content-preserving commits retain evidence. Missing/stale proof goes
 back to verification; changed acceptance scope or unresolved blockers goes back

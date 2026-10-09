@@ -101,8 +101,12 @@ fetching. Elapsed time alone does not invalidate proof. Plans with a starter
 source additionally require a successful source fetch on each evidence operation.
 
 Verification always prepares an isolated temporary checkout under ignored local
-state. The JSON `checkout` path identifies the tree all reviewers inspect and
-where `verify check` runs commands. It contains comparison-base context plus
+state. The JSON `checkout` path identifies captured source for behavioral and
+security inspection. Native /code-review runs in the original repository at the
+actual scoped checkpoint commit against its pinned fixed point. The capture keeps
+HEAD at the comparison base; do not run native committed-diff discovery or create
+review commits there. `verify check` runs commands in a separate disposable copy,
+reported as `check_checkout`. The capture contains comparison-base context plus
 intended working bytes and executable modes (committed, staged, unstaged and new
 files, including deletions). A path's working bytes are the proposed final version;
 index-only intermediate versions are not a second version of the PR. Unrelated
@@ -135,6 +139,10 @@ The isolated checkout remains available for independent inspection and check
 artifacts. Source mutations there invalidate proof; prepare again to build a
 fresh checkout and clear reports. Old ignored checkouts can be removed when no
 review is using them. Missing local checkouts require preparing fresh evidence.
+Carried reports depend on every earlier evidence folder in their history, and
+native reports depend on their reviewed commit. If either is removed or pruned,
+status reports INCOMPLETE; prepare again keeps the old record as history,
+explains why in `history_note`, and requires fresh checks and reports.
 Symlinks, submodules/nonregular inputs, unmerged entries and secret paths fail
 closed; the public `.env.template` is permitted. Secret/environment values are
 not fingerprinted. Disclose material external/environment gaps; this is not a
@@ -162,7 +170,7 @@ agreed starter repository and release: a pin proves byte identity, not publisher
 identity or a signed release. Independent reviewers must assess that choice.
 
 Use `tier: "sensitive"` and include `make check` and `make engineering-check`.
-Source-backed updates always require separate behavioral, maintainability and
+Source-backed updates always require separate behavioral, native Standards/Spec and
 security reviewers. Consumer projects do not acquire maintainer test/eval
 requirements. Application changes may accompany an update and remain subject to
 normal scope, checks and review rules.
@@ -203,8 +211,8 @@ reviewer roles; it never adds or removes checks.
 | Tier | Required reports | Sessions |
 |---|---|---|
 | `documentation` | behavioral | one fresh session |
-| `ordinary` | maintainability, behavioral | one fresh session may file both |
-| `sensitive` | maintainability, behavioral, security | a separate fresh session per role |
+| `ordinary` | standards, spec, behavioral | separate fresh sessions |
+| `sensitive` | standards, spec, behavioral, security | a separate fresh session per role |
 
 Preparation computes a tier floor from the changed paths and rejects a plan that
 declares less, naming each path and the rule that set the floor. A mixed change
@@ -247,28 +255,40 @@ A documentation reviewer checks the changed prose against the code, tests and
 recorded decisions (domain context and ADRs), and reports claims the code
 contradicts; `make check` still gates formatting, links and size.
 
-A combined ordinary session files two separate reports, one per role, each with
-its own verdict and the same `reviewer` identifier. Reports sharing a `reviewer`
-identifier across roles are rejected for `sensitive` changes, both when recorded
-and in status. The evidence record stores the floor, per-tier paths with their
-rules, required checks and roles. `verify status` reports the tier, its reason,
-the floor, required and missing roles, and any reviewer covering several roles.
-Status and publication recompute the floor for the current scope, so evidence
-whose tier falls below it cannot pass or ship. Records from before review tiers
-are unsupported: prepare again; no tier is inferred for old evidence.
+Native Standards and Spec are distinct semantic reports from the unchanged
+upstream /code-review skill. Each role uses a separate fresh session. Shared
+reviewer identifiers are rejected for ordinary and sensitive changes. Scheduling
+must follow the native workflow and runtime restrictions; the harness never
+invokes, wraps, copies or selects native axes.
+
+Evidence schema 3 replaces ticket-level maintainability proof. Schema 1 and 2
+records are preserved through `previous_evidence` when preparing fresh evidence;
+old reports and checks cannot satisfy the new contract. Run `verify prepare`
+with the current plan, checkpoint intended content, and obtain fresh recorded
+checks and required independent reports. Unsupported versions fail with recovery
+guidance: use compatible tooling or archive the unsupported record before preparing
+again. Never relabel maintainability as Standards or Spec. Publication history
+and authorization files are retained, but incompatible verification cannot publish.
+A changed publication plan still needs renewed presentation and authorization.
+Configuration and consumer check recipes do not change in this transition.
 
 ## Obtain fresh evidence
 
 Fresh reviewers for the roles the tier requires receive only the
-branch/request/spec/ticket pointer. They independently discover requirements,
+branch/request/spec/ticket and captured-content pointers plus factual check evidence. They independently discover requirements,
 actual scope and prepared plan; no implementer reasoning/self-review is handed
 over. The plan is a discoverable scope/execution contract, not proof.
 
-Capture the snapshot and `checkout` path before inspecting or running anything.
-Inspect source and diffs inside that checkout, including its uncommitted/new
-files relative to the comparison base. Invoke evidence commands from the original
-repository, where the plan and records live. The behavioral
-verifier executes required checks once through:
+Format intended content and make ordinary scoped checkpoint commits before native
+committed-diff review. Include additions, deletions and executable modes. Do not
+create synthetic review commits. Capture the snapshot and `checkout` path before
+inspecting or running anything.
+Behavioral and security reviewers inspect source and diffs inside that checkout,
+including its uncommitted/new files relative to the comparison base. Native
+Standards and Spec use the unchanged skill in the original checkpointed repository,
+with its committed diff against the pinned fixed point. Invoke evidence commands
+from the original repository, where the plan and records live. The implementer
+executes the initial full applicable suite once through:
 
 ```bash
 ./engineering verify check --change example --snapshot <prepared-token>
@@ -293,7 +313,7 @@ Each reviewer supplies a report in ignored local storage:
 }
 ```
 
-Roles are `maintainability`, `behavioral`, `security`; verdicts are `PASS`, `FAIL`
+Roles are `standards`, `spec`, `behavioral`, `security`; verdicts are `PASS`, `FAIL`
 or `CONCERNS`. Findings are readable strings with evidence/references. Behavioral
 PASS requires successful recorded authoritative checks. Non-PASS reports prevent
 PASS; missing roles the tier requires remain INCOMPLETE.
@@ -303,8 +323,28 @@ PASS; missing roles the tier requires remain INCOMPLETE.
 ./engineering verify status --change example
 ```
 
+For native `standards` and `spec` reports also supply `reviewed_commit` and
+`comparison_base` as full commit IDs captured from the actual native invocation.
+The snapshot binds plan, tools, dependencies, explicit inputs and content; these
+fields bind the committed review and its three-dot comparison. The reviewed
+commit must contain all prepared changes and its comparison must resolve to the
+prepared merge base. Subsequent uncovered edits invalidate publication. A
+content-preserving commit can retain proof; a commit alone proves no review.
+
+Fresh behavioral inspection consumes the recorded suite and inspects changed
+behavior, failure paths, configuration interactions and nearby regressions.
+Do not repeat valid checks just to inspect behavior. Security remains a separate
+targeted responsibility for sensitive changes, including evidence enforcement.
+
+Captured content is immutable review input. `verify check` executes in a separate
+copy exposed as `check_checkout`; source mutations there reject check evidence
+without modifying `checkout`. For other mutating probes use disposable copies and
+report source snapshot, commands, results and limitations. Ignored build artifacts
+are not proof of unchanged source. Never modify another reviewer's capture.
+
 Serialize evidence writes: run checks before recording the behavioral report and
-record reports one at a time. Never edit stored records manually. If inputs change,
+record reports one at a time. A per-change lock refuses concurrent verification
+and publication operations; retry after the active operation finishes. Never edit stored records manually. If inputs change,
 prepare again and obtain fresh proof; never relabel old findings with a new token.
 Outside the clean-rebase exception below, changed inputs clear active reports and checks. Preparation saves the previous
 record in the new checkout's sibling `previous.json`, exposed as
@@ -326,9 +366,9 @@ reports; submitting a report with `carried_from` or manually relabelling old
 reports is forbidden.
 
 A carried snapshot starts with no checks and is INCOMPLETE until `verify check`
-passes. For carried snapshots only, the implementer may run `verify check`:
-this deterministic rerun preserves carried reports and grants no self-review
-permission. A failing check yields FAIL and drops the behavioral report; a fresh
+passes. For carried snapshots only, this deterministic rerun preserves carried reports
+and grants no self-review permission. The initial suite may also be run by the
+implementer; neither execution replaces independent inspection. A failing check yields FAIL and drops the behavioral report; a fresh
 independent behavioral reviewer must investigate and attest after correction.
 Without carried reports, checks still clear behavioral proof before running.
 Interrupted runs cannot satisfy the full required check list.
@@ -374,8 +414,11 @@ Changed requirements, scope, architecture, check configuration or tools require
 broader inspection as appropriate. Historical failures cannot be ignored: explain
 resolution or retain the finding and a non-PASS verdict.
 
-The behavioral reviewer reruns `verify check` for the current snapshot after code
-fixes, then records observed behavior. Old checks cannot satisfy the new snapshot.
+The implementer runs `verify check` for the current snapshot after code fixes;
+the fresh behavioral reviewer consumes those results and records observed behavior.
+Native semantic correction review obtains both axes unchanged after checkpointing.
+Selective correction checks and exemptions are not available until their later
+implementation tickets land. Old checks cannot satisfy the new snapshot.
 The tool validates freshness, not the semantic validity of retention justifications
 or human fix authorization. Follow REVIEW.md for human direction, the two-attempt
 pause and settled-decision escalation. Present the corrected scope and evidence

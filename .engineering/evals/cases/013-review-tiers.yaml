@@ -11,7 +11,7 @@ shell: |
   assert 'tier floor' in review and 'No tier permits implementer self-review' in review
   guide = Path('.engineering/docs/verification.md').read_text()
   for phrase in ('## Review tiers', 'never adds or removes checks', 'agent policy is never documentation',
-                 'rejected for `sensitive` changes', 'prepare again; no tier is inferred'):
+                 'rejected for ordinary and sensitive changes', 'Evidence schema 3'):
       assert phrase in guide, phrase
   assert 'security_required' not in guide
   command = Path('.claude/commands/review.md').read_text()

@@ -91,7 +91,7 @@ def test_committed_implementation_and_uncommitted_fix_publish_once(repo, hosting
     (repo / "Makefile").write_text(f"check:\n\t@echo check >> {STATE}/calls\n")
     change_plan(repo, paths=["app.txt", "Makefile"], tier="sensitive")
     review(repo, hosting)
-    checkout = repo / prepare(repo)["checkout"]
+    checkout = repo / prepare(repo)["check_checkout"]
     (repo / "unrelated.txt").write_text("staged\n")
     git(repo, "add", "unrelated.txt")
     (repo / "unrelated.txt").write_text("working\n")
@@ -189,6 +189,9 @@ def test_hooks_enforced_and_mutations_stop_before_transport(
     repo, hosting, hook, script
 ):
     review(repo, hosting)
+    # Recreate equivalent remaining bytes after the real reviewed checkpoint.
+    if hook in ("pre-commit", "post-commit"):
+        git(repo, "reset", "--mixed", "main")
     hooks = repo / STATE / "custom-hooks"
     hooks.mkdir()
     git(repo, "config", "core.hooksPath", str(hooks))

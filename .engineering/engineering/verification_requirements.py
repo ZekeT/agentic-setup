@@ -33,8 +33,8 @@ GRAFT = [".engineering/bin/graft", "check"]
 TIERS = ("documentation", "ordinary", "sensitive")
 REVIEWERS = {
     "documentation": ["behavioral"],
-    "ordinary": ["maintainability", "behavioral"],
-    "sensitive": ["maintainability", "behavioral", "security"],
+    "ordinary": ["standards", "spec", "behavioral"],
+    "sensitive": ["standards", "spec", "behavioral", "security"],
 }
 # Starter-owned floor rules (ADR 0002); projects may add to them, never remove.
 # A pattern without "/" matches a file name at any depth; others match the

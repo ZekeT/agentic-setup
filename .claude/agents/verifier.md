@@ -1,6 +1,6 @@
 ---
 name: verifier
-description: Independently discovers expected behavior and runs repository checks in fresh context. Returns PASS or FAIL; never fixes.
+description: Independently inspects behavior and recorded repository checks in fresh context. Returns PASS or FAIL; never fixes.
 tools: Bash, Read, Grep
 readonly: true
 ---
@@ -17,24 +17,18 @@ refresh Graft. Run .engineering/bin/graft check when navigation selects Graft
 and application roots exist; NOT APPLICABLE is valid otherwise. Missing or
 stale required navigation returns to the implementer.
 
-Run make check and record actual commands, output and exit status. Also run the
-checks the installation role and path ownership require (verification guide),
-whether or not their targets exist. Exercise
-changed behavior and nearest likely regressions; explain relevant coverage.
-Compare evidence to the agreed request/ticket/spec, not checkbox completion.
+Consume successful recorded make check and all checks required by installation
+role and path ownership (verification guide). The implementer may execute the
+initial full applicable suite once through `engineering verify check`. Do not
+repeat a current suite. Independently inspect changed behavior, failure paths,
+configuration interactions and nearby regressions. Missing or failed checks
+prevent PASS. Never silently fix.
 
-Return PASS or FAIL with evidence, mismatches, and what remains unverified.
-Any failed or unavailable required check prevents PASS. Never silently fix.
-
-For reusable evidence follow .engineering/docs/verification.md. Independently
-inspect the prepared plan against the request and actual scope; require applicable
-checks, tools, ignored inputs and a review tier at or above its floor. Capture its snapshot BEFORE
-verification. Run `engineering verify check --change <id> --snapshot <token>` to
-execute and record the required checks instead of running them twice. Then submit
-your behavioral report with that same snapshot and observed coverage/gaps.
-When asked for a combined ordinary-tier session, also inspect maintainability as
-the maintainability reviewer would and file it as a separate report with its own
-verdict and the same `reviewer` identifier. Never combine roles for a sensitive tier.
+Follow .engineering/docs/verification.md. Inspect the plan against the actual
+request and scope, including tools, explicit inputs and tier floor. Capture its
+snapshot BEFORE inspection and submit a behavioral report with observed coverage
+and gaps. Standards and Spec are native semantic axes, separate from this role.
+Never combine roles for a sensitive tier or an ordinary tier.
 For a documentation tier, check each changed claim against the code, tests and
 recorded decisions (domain context, ADRs); a contradiction is a FAIL finding.
 If inputs change, do not relabel old findings with a new token: reverify. Local
@@ -43,7 +37,8 @@ self-review for independent evidence.
 
 For prepared evidence inspect the reported isolated `checkout` path, including
 its staged, unstaged and new content against the comparison base. Run evidence
-commands from the original repository; `verify check` executes in that checkout.
+commands from the original repository; `verify check` executes in a disposable copy. Mutating probes must also use
+disposable copies; report their source snapshot, commands, results and limitations.
 Never use unrelated working-tree edits to support PASS. Missing or modified
 checkout content requires fresh preparation and review.
 
@@ -53,4 +48,5 @@ For authorized corrections use the review-corrections procedure in
 .engineering/docs/verification.md: independently inspect the fix and affected
 behavior, explicitly justify retained unchanged-area evidence in your new report,
 and broaden inspection when scope or architecture changes. Prior acceptance does
-not transfer. The behavioral verifier reruns authoritative checks after code fixes.
+not transfer. Changed code currently requires fresh full checks and independent inspection;
+bounded correction-check reuse is not yet available.

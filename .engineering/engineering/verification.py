@@ -4,6 +4,7 @@ import argparse
 import json
 import re
 import shutil
+import subprocess
 import tempfile
 from pathlib import Path
 from typing import Any
@@ -14,21 +15,22 @@ from .source import git
 from .transaction import write_files
 from .verification_carry import carried_reports
 from .verification_checkout import materialize, validate_checkout
+from .verification_execution import evidence_lock, execute_checks
 from .verification_inputs import STATE, strings
 from .verification_requirements import REVIEWERS, TIERS, requirements
+from .verification_semantic import AXES, validate_semantic
 from .verification_snapshot import (
     identity,
     read_plan,
-    run_command,
     snapshot,
     validate_plan,
 )
 
-# Version 2 adds review tiers; older records are history, never inferred proof.
-SCHEMA = 2
+# Version 3 replaces maintainability with distinct native Standards and Spec proof.
+SCHEMA = 3
 SESSIONS = {
     "documentation": "Documentation tier: one behavioral review.",
-    "ordinary": "Ordinary tier: one fresh session may file both reports.",
+    "ordinary": "Ordinary tier: native axes and behavioral inspection use separate fresh sessions.",
     "sensitive": "Sensitive tier: each role needs its own fresh session.",
 }
 
@@ -60,9 +62,15 @@ def location(root: Path, change: str) -> str:
     return name
 
 
-def read_record(root: Path, name: str) -> dict[str, Any]:
+def read_record(
+    root: Path, name: str, *, seen: frozenset[Path] = frozenset()
+) -> dict[str, Any]:
     """Refuse unsupported or incomplete record structure instead of assuming proof."""
-    data = json_object(safe_path(root, name).read_bytes())
+    path = safe_path(root, name)
+    if path in seen:
+        raise ValueError("Invalid cyclic verification history; prepare fresh evidence")
+    seen = seen | {path}
+    data = json_object(path.read_bytes())
     if (
         type(data.get("schema_version")) is not int
         or data["schema_version"] != SCHEMA
@@ -84,6 +92,7 @@ def read_record(root: Path, name: str) -> dict[str, Any]:
         or stored["roles"] != REVIEWERS[plan["tier"]]
     ):
         raise ValueError("Invalid stored requirements; prepare again")
+    previous = None
     for role, report in data["reports"].items():
         if not isinstance(report, dict):
             raise ValueError("Invalid stored report")
@@ -95,7 +104,13 @@ def read_record(root: Path, name: str) -> dict[str, Any]:
             history = data.get("previous_evidence")
             if not isinstance(history, str):
                 raise ValueError("Carried report requires previous evidence")
-            previous = json_object(safe_path(root, history).read_bytes())
+            if previous is None:
+                try:
+                    previous = read_record(root, history, seen=seen)
+                except OSError as exc:
+                    raise ValueError(
+                        "Carried evidence history is unavailable; prepare again for fresh proof"
+                    ) from exc
             original = previous.get("reports", {}).get(role)
             if (
                 report["carried_from"] != previous.get("snapshot")
@@ -110,6 +125,8 @@ def read_record(root: Path, name: str) -> dict[str, Any]:
                 raise ValueError("Carried report differs from previous evidence")
         if report["role"] != role:
             raise ValueError("Stored reviewer role differs from report")
+        if "carried_from" not in report:
+            validate_semantic(root, report, data["inputs"])
     for item in data["checks"]:
         if (
             not isinstance(item, dict)
@@ -130,8 +147,8 @@ def outcome(data: dict[str, Any]) -> dict[str, Any]:
     missing_roles = [role for role in roles if role not in data["reports"]]
     missing = list(missing_roles)
     shared = shared_reviewers(data["reports"])
-    if plan["tier"] == "sensitive" and shared:
-        missing.append(f"separate sessions for sensitive review: {shared}")
+    if shared:
+        missing.append(f"separate sessions for independent review: {shared}")
     checks = data["checks"]
     if [item["command"] for item in checks] != plan["checks"]:
         missing.append("authoritative checks")
@@ -142,7 +159,9 @@ def outcome(data: dict[str, Any]) -> dict[str, Any]:
         "status": status,
         "snapshot": data["snapshot"],
         "checkout": data.get("checkout"),
+        "check_checkout": data.get("check_checkout"),
         "previous_evidence": data.get("previous_evidence"),
+        "history_note": data.get("history_note"),
         "starter_source": {
             key: value
             for key, value in data["inputs"].get("starter_source", {}).items()
@@ -181,7 +200,12 @@ def shared_reviewers(reports: dict[str, Any]) -> dict[str, list[str]]:
 
 def validate_report(report: dict[str, Any], token: str) -> None:
     """Validate explicit independent attestations; do not claim identity authentication."""
-    if set(report) != {
+    semantic_fields = (
+        {"reviewed_commit", "comparison_base"} if report.get("role") in AXES else set()
+    )
+    if not semantic_fields <= set(report):
+        raise ValueError("Native reports require reviewed_commit and comparison_base")
+    if set(report) - semantic_fields != {
         "snapshot",
         "role",
         "reviewer",
@@ -196,7 +220,7 @@ def validate_report(report: dict[str, Any], token: str) -> None:
         )
     if report["snapshot"] != token:
         raise ValueError("STALE report: snapshot differs; reverify current content")
-    if report["role"] not in ("maintainability", "behavioral", "security"):
+    if report["role"] not in (*AXES, "behavioral", "security"):
         raise ValueError("Unknown reviewer role")
     if report["independent"] is not True:
         raise ValueError(
@@ -212,6 +236,12 @@ def validate_report(report: dict[str, Any], token: str) -> None:
 
 
 def operate(root: Path, args: argparse.Namespace) -> int:
+    """Serialize evidence readers and writers for the selected change."""
+    with evidence_lock(root, location(root, args.change)):
+        return operate_locked(root, args)
+
+
+def operate_locked(root: Path, args: argparse.Namespace) -> int:
     """Perform one evidence operation and emit a readable JSON result."""
     allowed = {
         "prepare": "plan",
@@ -241,10 +271,19 @@ def operate(root: Path, args: argparse.Namespace) -> int:
         previous = None
         if path.exists():
             previous = json_object(path.read_bytes())
-            # Records from before review tiers are kept as history only.
+            version = previous.get("schema_version")
+            if type(version) is not int or version not in (1, 2, SCHEMA):
+                raise ValueError(
+                    "Unsupported verification schema; use compatible tooling or archive the record before prepare again"
+                )
+            # Known older contracts are preserved as history, never relabelled.
             reusable = previous.get("schema_version") == SCHEMA
             if reusable:
-                previous = read_record(root, name)
+                try:
+                    previous = read_record(root, name)
+                except (ValueError, OSError, subprocess.CalledProcessError) as exc:
+                    reusable = False  # Unverifiable history is preserved, never reused.
+                    data["history_note"] = f"Previous evidence was not reused: {exc}"
             if (
                 reusable
                 and previous["snapshot"] == token
@@ -312,35 +351,15 @@ def operate(root: Path, args: argparse.Namespace) -> int:
         if args.operation == "check":
             if args.snapshot != token:
                 raise ValueError("STALE check request: obtain the current snapshot")
-            # Clear old proof before running: interrupted or failed reruns cannot reuse PASS.
-            data["checks"] = []
-            carried = any(
-                "carried_from" in report for report in data["reports"].values()
-            )
-            if not carried:
-                data["reports"].pop("behavioral", None)
-            write_files(root, {name: encoded(data)})
-            for command in data["inputs"]["plan"]["checks"]:
-                data["checks"].append(run_command(checkout, command, timeout=1800))
-                if carried and data["checks"][-1]["exit_code"]:
-                    data["reports"].pop("behavioral", None)
-                write_files(root, {name: encoded(data)})
-            validate_checkout(checkout, inputs)
-            after, _ = snapshot(root, data["inputs"]["plan"])
-            if after != token:
-                raise ValueError(
-                    "STALE: checks mutated verification inputs; prepare and reverify"
-                )
-            write_files(root, {name: encoded(data)})
+            execute_checks(root, name, data)
         elif args.operation == "record":
             report = json_object(safe_path(root, args.report).read_bytes())
             validate_report(report, token)
+            validate_semantic(root, report, inputs)
             reports = {**data["reports"], report["role"]: report}
-            if data["inputs"]["plan"]["tier"] == "sensitive" and (
-                shared := shared_reviewers(reports)
-            ):
+            if shared := shared_reviewers(reports):
                 raise ValueError(
-                    f"Sensitive tier requires separate fresh sessions: {shared}"
+                    f"Independent roles require separate fresh sessions: {shared}"
                 )
             if report["role"] == "behavioral" and report["verdict"] == "PASS":
                 if (
