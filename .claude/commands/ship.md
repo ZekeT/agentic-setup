@@ -43,7 +43,9 @@ actual Git/provider state, reuses the existing commit and PR/MR, and skips an
 already completed push. A transport failure alone does not repeat verification.
 Stop on uncertain lookup or changed inputs; never recover with automatic force-push.
 
-For carried snapshots only, the implementer may run `verify check`. A clean rebase
+The implementer may run the initial full applicable suite through `verify check`.
+Fresh behavioral inspection consumes its recorded results without repeating it.
+For carried snapshots only, existing review reports may accompany fresh checks. A clean rebase
 can carry independent reports through `verify prepare` when the own patches,
 plan, tools and checks are unchanged and upstream paths do not overlap scope or
 explicit inputs. Reports record `carried_from`; fresh checks are required before

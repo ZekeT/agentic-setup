@@ -14,6 +14,7 @@ from .source import git
 from .transaction import write_files
 from .verification import location, outcome, read_record
 from .verification_checkout import validate_checkout
+from .verification_execution import evidence_lock
 from .verification_inputs import strings
 from .verification_snapshot import identity, snapshot
 
@@ -161,6 +162,12 @@ def authorize_scope(
 
 
 def operate(root: Path, args: argparse.Namespace) -> int:
+    """Serialize publication with evidence writes for this change."""
+    with evidence_lock(root, location(root, args.change)):
+        return operate_locked(root, args)
+
+
+def operate_locked(root: Path, args: argparse.Namespace) -> int:
     """Reconcile completed work and reuse current proof under scoped authorization."""
     completed: list[str] = []
     step = "preflight"

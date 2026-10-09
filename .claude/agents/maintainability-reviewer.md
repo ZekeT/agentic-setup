@@ -30,14 +30,15 @@ Return PASS or CONCERNS. Every concern needs a path/line, concrete problem,
 consequence and suggested direction. Missing evidence or a failed required
 check prevents PASS. Report concerns to the implementer; never fix them.
 
-For reusable evidence read .engineering/docs/verification.md and independently
-validate the prepared scope against the request. Capture the snapshot before
-review and submit your maintainability report with that same snapshot. Do not
-relabel stale findings. Local evidence output is allowed, application edits are not.
+This agent is available for explicitly requested broad architecture review only.
+It is not a ticket-level assurance role. Native Standards and Spec reports replace
+the former maintainability report; do not submit this agent's findings as either
+native axis or convert historical maintainability evidence.
 
 For prepared evidence inspect the reported isolated `checkout` path, including
 its staged, unstaged and new content against the comparison base. Run evidence
-commands from the original repository; `verify check` executes in that checkout.
+commands from the original repository; `verify check` executes in a disposable copy. Mutating probes also require
+disposable copies; record source identity, commands and limitations.
 Never use unrelated working-tree edits to support PASS. Missing or modified
 checkout content requires fresh preparation and review.
 
@@ -47,4 +48,5 @@ For authorized corrections use the review-corrections procedure in
 .engineering/docs/verification.md: independently inspect the fix and affected
 behavior, explicitly justify retained unchanged-area evidence in your new report,
 and broaden inspection when scope or architecture changes. Prior acceptance does
-not transfer. The behavioral verifier reruns authoritative checks after code fixes.
+not transfer. The implementer records fresh full checks after code fixes; independent
+behavioral inspection consumes that evidence.

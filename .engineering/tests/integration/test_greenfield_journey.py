@@ -60,10 +60,14 @@ def prepare(root):
 
 def scripted_verification(root):
     """Test record consumption only; the live trial supplies actual reviewers."""
+    plan = json.loads((root / STATE / "plan.json").read_text())
+    if git(root, "status", "--porcelain", "--", *plan["paths"]):
+        git(root, "add", "--", *plan["paths"])
+        git(root, "commit", "--only", "-m", "scoped checkpoint", "--", *plan["paths"])
     prepared = prepare(root)
     token = prepared["snapshot"]
-    engineering(root, "verify", "check", "--snapshot", token)
-    for role in ("maintainability", "behavioral", "security"):
+    prepared = engineering(root, "verify", "check", "--snapshot", token)
+    for role in ("standards", "spec", "behavioral", "security"):
         report = {
             "snapshot": token,
             "role": role,
@@ -74,6 +78,11 @@ def scripted_verification(root):
             "findings": [],
             "coverage_gaps": ["No model judgment or live hosting exercised."],
         }
+        if role in ("standards", "spec"):
+            report.update(
+                reviewed_commit=git(root, "rev-parse", "HEAD"),
+                comparison_base=git(root, "rev-parse", "main"),
+            )
         (root / STATE / "report.json").write_text(json.dumps(report))
         engineering(root, "verify", "record", "--report", f"{STATE}/report.json")
     return prepared
@@ -159,7 +168,7 @@ def test_generated_application_correction_and_failed_push_reuse(repo, hosting):
     first = prepare(repo)
     assert first["status"] == "INCOMPLETE"
     assert (repo / first["checkout"] / "README.md").read_bytes() == original_readme
-    scripted_verification(repo)
+    first = scripted_verification(repo)
     assert command(repo, sys.executable, "-m", "src.greeting", "Ada") == "Hello, Ada!\n"
 
     # Scripted counterpart of a human-directed fix; no human approval is claimed.
@@ -175,7 +184,8 @@ def test_generated_application_correction_and_failed_push_reuse(repo, hosting):
         command(repo, sys.executable, "-m", "src.greeting", "  Ada  ")
         == "Hello, Ada!\n"
     )
-    assert git(repo, "rev-parse", "HEAD") == implementation
+    assert git(repo, "rev-parse", "HEAD^") == implementation
+    corrected_checkpoint = git(repo, "rev-parse", "HEAD")
     acceptance = {
         "snapshot": fixed["snapshot"],
         "summary": "Scripted fixture presentation for corrected greeting.",
@@ -198,7 +208,7 @@ def test_generated_application_correction_and_failed_push_reuse(repo, hosting):
     assert failed["completed"] == ["preflight", "commit"]
     assert failed["failed"] == "push"
     accepted_head = git(repo, "rev-parse", "HEAD")
-    assert git(repo, "rev-parse", "HEAD^") == implementation
+    assert accepted_head == corrected_checkpoint
     # Restore only the deliberately failing fixture hook in the disposable remote.
     hook.unlink()
     receipt = repo / STATE / "created.json"
@@ -215,7 +225,7 @@ def test_generated_application_correction_and_failed_push_reuse(repo, hosting):
     assert git(hosting[0], "rev-parse", "feature") == accepted_head
     assert (repo / STATE / "journey.json").read_bytes() == evidence
     for prepared in (first, fixed):
-        calls = repo / prepared["checkout"] / STATE / "check-calls"
+        calls = repo / prepared["check_checkout"] / STATE / "check-calls"
         assert calls.read_text() == "check\n"
     assert git(repo, "diff", "--cached", "--binary") == staged
     assert readme.read_bytes() == working

@@ -30,7 +30,7 @@ explicitly run `.engineering/bin/graft build` before verification; see
 is project configuration: Engineering updates validate and migrate it but keep
 your values. Add feature instructions as described in `docs/agents/domain.md`.
 
-Run `make fmt` while developing. The independent verifier runs `make check`
+Run `make fmt` while developing. The implementer records the full applicable suite, including `make check`
 for the completed change; review and ship reuse current evidence.
 `./engineering doctor` diagnoses installation health offline. Local Markdown
 specs and tickets under `.scratch/` remain trackable in Git.

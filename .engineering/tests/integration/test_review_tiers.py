@@ -79,8 +79,8 @@ def test_raised_tier_requires_its_roles_and_reports_them(repo):
     assert result["tier"] == "sensitive"
     assert result["tier_reason"] == "Raised: parses credentials"
     assert result["floor"] == "ordinary"
-    assert result["required_roles"] == ["maintainability", "behavioral", "security"]
-    assert result["missing_roles"] == ["maintainability", "security"]
+    assert result["required_roles"] == ["standards", "spec", "behavioral", "security"]
+    assert result["missing_roles"] == ["standards", "spec", "security"]
     assert result["shared_reviewers"] == {}
 
 
@@ -238,27 +238,27 @@ def test_build_and_agent_scripts_floor_at_sensitive(repo, name, rule):
     assert f"{name} ({rule})" in error
 
 
-def test_one_session_may_file_both_ordinary_reports(repo):
+def test_ordinary_roles_require_independent_sessions(repo):
     token = prepare(repo)["snapshot"]
     cli(repo, "check", "--change", "example", "--snapshot", token)
-    report(repo, token, "maintainability", reviewer="fresh-combined-session")
-    report(repo, token, "behavioral", reviewer="fresh-combined-session")
-    result = cli(repo, "status", "--change", "example")
-    assert result["status"] == "PASS"
-    assert result["shared_reviewers"] == {
-        "fresh-combined-session": ["behavioral", "maintainability"]
-    }
+    report(repo, token, "standards", reviewer="fresh-combined-session")
+    refused = report(repo, token, "spec", reviewer="fresh-combined-session", expected=1)
+    assert "separate" in refused["error"]
+    report(repo, token, "spec")
+    report(repo, token, "behavioral")
+    assert cli(repo, "status", "--change", "example")["status"] == "PASS"
 
 
 def test_sensitive_reports_need_separate_sessions(repo):
     change_plan(repo, tier="sensitive", tier_reason="Raised: parses credentials")
     token = prepare(repo)["snapshot"]
     cli(repo, "check", "--change", "example", "--snapshot", token)
-    report(repo, token, "maintainability", reviewer="one-session")
+    report(repo, token, "standards", reviewer="one-session")
     result = report(repo, token, "security", reviewer="one-session", expected=1)
     assert "separate" in result["error"]
     # Replacing a role's own report is not sharing.
-    report(repo, token, "maintainability", reviewer="one-session")
+    report(repo, token, "standards", reviewer="one-session")
+    report(repo, token, "spec")
     report(repo, token, "behavioral")
     report(repo, token, "security")
     assert cli(repo, "status", "--change", "example")["status"] == "PASS"
@@ -269,9 +269,7 @@ def test_sensitive_reports_need_separate_sessions(repo):
     path.write_text(json.dumps(data))
     result = cli(repo, "status", "--change", "example", status=1)
     assert result["status"] == "INCOMPLETE"
-    assert result["shared_reviewers"] == {
-        "one-session": ["maintainability", "security"]
-    }
+    assert result["shared_reviewers"] == {"one-session": ["security", "standards"]}
     assert any("separate" in item for item in result["missing"])
 
 
@@ -282,7 +280,7 @@ def test_record_stores_floor_categories_checks_and_roles(repo):
     data = json.loads(
         (repo / ".engineering/state/verification/example.json").read_text()
     )
-    assert data["schema_version"] == 2
+    assert data["schema_version"] == 3
     assert data["requirements"] == {
         "floor": "sensitive",
         "paths": {
@@ -291,7 +289,7 @@ def test_record_stores_floor_categories_checks_and_roles(repo):
             "documentation": {},
         },
         "checks": [["make", "check"]],
-        "roles": ["maintainability", "behavioral", "security"],
+        "roles": ["standards", "spec", "behavioral", "security"],
     }
 
 
@@ -349,7 +347,7 @@ def test_agent_policy_is_never_documentation(project, name):
     assert "below the tier floor ordinary" in error and "agent policy" in error
     result = prepare_paths(project, [name], [CHECK, HEALTH], tier="ordinary")
     assert result["floor"] == "ordinary"
-    assert result["required_roles"] == ["maintainability", "behavioral"]
+    assert result["required_roles"] == ["standards", "spec", "behavioral"]
 
 
 def test_generated_and_adopted_projects_share_review_defaults(pristine):

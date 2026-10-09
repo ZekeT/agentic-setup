@@ -33,7 +33,7 @@ def test_clean_rebase_carries_reports_but_requires_fresh_checks(repo):
     assert current["snapshot"] != old
     assert current["status"] == "INCOMPLETE"
     assert current["checks"] == []
-    assert set(current["reports"]) == {"maintainability", "behavioral"}
+    assert set(current["reports"]) == {"standards", "spec", "behavioral"}
     for report in current["reports"].values():
         assert report["carried_from"] == old
         assert report["snapshot"] == current["snapshot"]
@@ -62,7 +62,7 @@ def test_failed_carried_rerun_drops_behavioral_and_stays_failed(repo):
         status=1,
     )
     assert failed["status"] == "FAIL"
-    assert set(failed["reports"]) == {"maintainability"}
+    assert set(failed["reports"]) == {"standards", "spec"}
     assert cli(repo, "status", "--change", "example", status=1)["status"] == "FAIL"
 
 
@@ -129,7 +129,7 @@ def test_ordinary_check_still_clears_behavioral_report(repo):
     token = complete(repo)
     result = cli(repo, "check", "--change", "example", "--snapshot", token)
     assert result["status"] == "INCOMPLETE"
-    assert set(result["reports"]) == {"maintainability"}
+    assert set(result["reports"]) == {"standards", "spec"}
 
 
 def test_publication_accepts_carried_pass_and_keeps_remote_base_guard(repo, hosting):
@@ -192,3 +192,20 @@ def test_carried_report_tampering_is_rejected(repo):
     path.write_text(json.dumps(record))
     result = cli(repo, "status", "--change", "example", status=1)
     assert "differs from previous evidence" in result["error"]
+
+
+def test_removed_history_folder_requires_fresh_proof(repo):
+    import shutil
+
+    complete(repo)
+    advance_and_rebase(repo)
+    first = prepare(repo)
+    cli(repo, "check", "--change", "example", "--snapshot", first["snapshot"])
+    advance_and_rebase(repo, {"second.txt": "more upstream\n"})
+    second = prepare(repo)
+    shutil.rmtree((repo / first["checkout"]).parent)
+    assert cli(repo, "status", "--change", "example", status=1)["error"]
+    current = prepare(repo)
+    assert current["reports"] == {} and current["checks"] == []
+    history = json.loads((repo / current["previous_evidence"]).read_text())
+    assert history["snapshot"] == second["snapshot"]

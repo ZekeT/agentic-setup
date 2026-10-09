@@ -4,31 +4,31 @@
       "ownership": {
         "mode": "file"
       },
-      "upstream": "ab0cc68dcab30d34351c01510b810803cb3cac3c078cfc6bdf6e86ba0ea5dbcb"
+      "upstream": "e26839d3248ca7c65bbb95702dcee07044fa0a3b0966f9afb6577514db2c5ea9"
     },
     ".claude/agents/security-reviewer.md": {
       "ownership": {
         "mode": "file"
       },
-      "upstream": "ac3b6b4e8847da1903ddc61e200def9ec2bd6f7e297a9f69e92cd92c697d4856"
+      "upstream": "258d4c65ba2dbf7e8006eddb17fccb1e619546b2500731742a8adbe1f54d9fcc"
     },
     ".claude/agents/verifier.md": {
       "ownership": {
         "mode": "file"
       },
-      "upstream": "53db5a3b2c89705d1f0f1db49e21b0cda1b8677f2dbc789f4485c1a83ba5ea10"
+      "upstream": "9f937709f5b569c0f8bcb9d8878e88a9b6384898e82b9bddd26ee24ab4ebab08"
     },
     ".claude/commands/review.md": {
       "ownership": {
         "mode": "file"
       },
-      "upstream": "c08b7a5418e5d69a846f50af4631c6488ee778602067b18ed864b1b4538b65bf"
+      "upstream": "b52199748dcbc1b54981f871287e2f249cd4c37b45950865bd6703755e2acf2b"
     },
     ".claude/commands/ship.md": {
       "ownership": {
         "mode": "file"
       },
-      "upstream": "50fcc2a42d9ec19bc1faab37465a1c4f642a0f8121d8ca9f4564fec501fd01d0"
+      "upstream": "f63d56ac6e6dc4be491b3275c4639a5bc794e2063fa2b15d89a3cebdee18cf8a"
     },
     ".claude/hooks/post_tool_lint.py": {
       "ownership": {
@@ -94,7 +94,7 @@
       "ownership": {
         "mode": "file"
       },
-      "upstream": "a9dbcd8092054a4170f597cb020f5add03c74024135f36e452e0bbe08fccd7bc"
+      "upstream": "42d843f3d5e14bb136fb9c880efa11e7962294c4f68d3efbc9ac7b2a7079e7b6"
     },
     ".engineering/docs/testing.md": {
       "ownership": {
@@ -106,7 +106,7 @@
       "ownership": {
         "mode": "file"
       },
-      "upstream": "2cc73e971083c4176955ec8745cb03b2f0ffa38d6a699d437779abc823b1430c"
+      "upstream": "52a40a1660a4be253f1cdc25997b0dcf45ff6a99fb54037d5a3dd851ddc7181c"
     },
     ".engineering/engineering/__init__.py": {
       "ownership": {
@@ -208,7 +208,7 @@
       "ownership": {
         "mode": "file"
       },
-      "upstream": "02f7c8d6362747e1d545aba1d2942935548414e342c0458d9fabe123ade85a85"
+      "upstream": "61d77090c3307a7e4a786e07c23003aa516c31be07c9b2ce8314115ef0825d8a"
     },
     ".engineering/engineering/publication_git.py": {
       "ownership": {
@@ -262,7 +262,7 @@
       "ownership": {
         "mode": "file"
       },
-      "upstream": "613f991b307553381620f76b4115fcdfddff561c9ac5c6a118b23f3b511fec2d"
+      "upstream": "64e06c6665692cef9a8abd1a4cfb172e567be125eb2a86ee8d3fa1fd46303ae1"
     },
     ".engineering/engineering/verification_carry.py": {
       "ownership": {
@@ -275,6 +275,12 @@
         "mode": "file"
       },
       "upstream": "4aebc0e147f78703b13dccc4899d0a07b798eeee06e96b721f881b176abfd30a"
+    },
+    ".engineering/engineering/verification_execution.py": {
+      "ownership": {
+        "mode": "file"
+      },
+      "upstream": "39ca36b4fb4b977b2b34b42454e627adabc273d27fdfdde91fcc17f547ff7265"
     },
     ".engineering/engineering/verification_git.py": {
       "ownership": {
@@ -292,7 +298,13 @@
       "ownership": {
         "mode": "file"
       },
-      "upstream": "1a47c2869c345de3bdfd9e1caeaaf5b256fdc8383c4d6aa0a12ea2893a8c6909"
+      "upstream": "d973f8bc41fb6a711eca398f97e85d9eb9195566e24f9cbb3ef435abc3cf8335"
+    },
+    ".engineering/engineering/verification_semantic.py": {
+      "ownership": {
+        "mode": "file"
+      },
+      "upstream": "3d4226240cf30a709dc2d7d9bffaf175bf96e1af1f319efe20779ad6953115bc"
     },
     ".engineering/engineering/verification_snapshot.py": {
       "ownership": {
@@ -355,13 +367,13 @@
         "marker": "integration",
         "mode": "section"
       },
-      "upstream": "49140756ef5195894e658ebf319b506e694b0f97a7cfcd08f88ea9fe0bc178ed"
+      "upstream": "6fef30098b77fb073a0eb755ce0e59dbc5253126925449284b408bd310d044d9"
     },
     "ENGINEERING.md": {
       "ownership": {
         "mode": "file"
       },
-      "upstream": "bb9f4113d60b13959f6917a29d04bb20beb0926b41894b7931eca73107a8ef2c"
+      "upstream": "85a6f92849d11e418823df0631f980bd6d283b8392939e3114b0963f932fa28f"
     },
     "Makefile": {
       "ownership": {
@@ -374,7 +386,7 @@
       "ownership": {
         "mode": "file"
       },
-      "upstream": "b40da735cd67db5733beca306c1e8b085c2911e64ac1cb53e1b41ff05b2657b4"
+      "upstream": "ab8183d6cdd2d2196d900edced5987dbdb7de316c024ce40c598bcd9cbca6399"
     },
     "engineering": {
       "ownership": {

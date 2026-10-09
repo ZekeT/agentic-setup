@@ -78,17 +78,21 @@ Hello, Ada! Include the command I can run to try it.
 | `/review` | Current scope, check/reviewer results, explained findings, risks and unverified areas; current proof is reused, missing/stale proof is obtained | Direct any corrections, or accept the unchanged presented result with `/ship` |
 | `/ship` after completed review | Remaining accepted fixes committed, branch pushed, and an actual PR/MR URL, or precise partial progress and a retry command | Review the PR/MR; merging requires separate authorization |
 
-The agent formats with `make fmt` before independent verification. A fresh
-behavioral verifier runs `make check`; the maintainability reviewer inspects the
-same proposed content when the review tier requires it, with security review
-for sensitive changes. You do not need to
+The agent formats with `make fmt` before independent verification. The implementer checkpoints all intended additions, deletions and modes before
+native /code-review, then records the initial full applicable suite once through
+`verify check`. Distinct native Standards and Spec reports replace ticket-level
+maintainability review. A separate fresh behavioral reviewer consumes factual
+check evidence and inspects behavior; sensitive changes also need targeted security
+review. Native skills remain unchanged and govern their own scheduling. You do not need to
 run the full gate again merely to invoke review or ship. A local commit records
 implementation; it proves neither verification nor human acceptance. `/implement`
 authorizes local commits only. `/ship` after completed review accepts the unchanged
 presented scope and authorizes scoped commits, push and PR/MR creation; explicit
 narrower instructions still apply.
 
-For carried snapshots only, the implementer may run `verify check`. A clean rebase
+The implementer may run the initial full applicable suite through `verify check`.
+Fresh behavioral inspection consumes its recorded results without repeating it.
+For carried snapshots only, existing review reports may accompany fresh checks. A clean rebase
 can carry independent reports through `verify prepare` when the own patches,
 plan, tools and checks are unchanged and upstream paths do not overlap scope or
 explicit inputs. Reports record `carried_from`; fresh checks are required before
@@ -316,17 +320,16 @@ optional developer tools; branch names are not a workflow database.
 ## Context boundaries and verification
 
 Prefer fresh context between wayfinding, settled specs/tickets, each
-implementation ticket, maintainability review, and behavioral verification.
+implementation ticket, native Standards/Spec review, and behavioral verification.
 The implementer's hidden reasoning and self-review narrative must never be
-passed to the verifier. Reviewers receive only a branch/ticket/spec/request
-pointer and reconstruct requirements, diff, source and test evidence themselves.
+passed to the verifier. Reviewers receive requirement/content pointers and factual check evidence and reconstruct requirements, diff, source and test evidence themselves.
 
 ```text
 implement → targeted tests → make fmt
           → graft build / graft check (when Graft is selected with application roots)
           → review tier at or above the computed floor
-          → fresh maintainability reviewer (read-only: PASS / CONCERNS; not documentation tier)
-          → fresh verifier (read-only: PASS / FAIL; runs make check)
+          → scoped checkpoint → unchanged native Standards and Spec reviews
+          → recorded full applicable suite → fresh behavioral inspection
           → security reviewer (sensitive tier) → human review → authorized ship
 ```
 
@@ -337,7 +340,7 @@ ordinary. Paths listed under `[review] documentation` in
 `.engineering/config.toml` may use the documentation tier. Declare sensitive for
 auth, secrets, cryptography, untrusted input, payments, privilege boundaries,
 destructive operations, sensitive storage, network exposure and dependency
-execution. One fresh session may cover both ordinary roles.
+execution. Each role uses a separate fresh session.
 
 `/implement` authorizes scoped local commits, not acceptance or publication.
 After implementation, automatically hand off to fresh independent reviewers when
@@ -363,7 +366,8 @@ GitHub is optional. Invocation of `/implement` does not authorize pushes or PRs.
 ## Review corrections
 
 `/review` explains findings with evidence and waits for your fix instructions.
-Ordinary corrections need no new planning cycle and may remain uncommitted.
+Ordinary corrections need no new planning cycle; checkpoint them before native
+semantic review. Correction-check reuse is not available yet.
 Fresh reviewers inspect the correction and affected behavior, justify retained
 evidence for unchanged areas, and rerun authoritative checks after code fixes.
 The updated scope comes back for acceptance. Preference-only alternatives are

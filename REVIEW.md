@@ -15,8 +15,8 @@ Review in this order:
 8. What remains unverified?
 
 Require current evidence from the fresh read-only reviewers the plan's review
-tier requires: behavioral verification (PASS / FAIL) always, maintainability
-review (PASS / CONCERNS) for `ordinary` and `sensitive`, and security review for
+tier requires: behavioral verification (PASS / FAIL) always, native Standards and Spec
+review (distinct PASS / FAIL / CONCERNS reports) for `ordinary` and `sensitive`, and security review for
 `sensitive`. Reuse matching
 evidence under [.engineering/docs/verification.md](.engineering/docs/verification.md);
 fresh context does not mean repeating an unchanged review at every later gate. They independently discover the diff, expected
@@ -29,9 +29,7 @@ documentation-tier reviewer checks the docs against code and recorded decisions.
 Declare
 `sensitive` above the floor for authentication, authorization, secrets,
 cryptography, untrusted input, privilege boundaries, payments, destructive
-operations, sensitive storage, network exposure or dependency execution. One
-fresh session may file both `ordinary` reports; `sensitive` needs a separate
-fresh session per role. No tier permits implementer self-review.
+operations, sensitive storage, network exposure or dependency execution. Every role needs a separate fresh session. No tier permits implementer self-review.
 
 Use `/show-me` for a design, request path, module boundary or diff that is hard
 to understand. Visual explanations are normally ephemeral. No diagram is a gate.
@@ -58,8 +56,7 @@ non-blocking; they do not justify a CONCERNS/FAIL verdict by themselves.
 Wait for human instructions identifying which fixes to make before editing.
 
 Authorized ordinary corrections need no new spec, tickets or dedicated fix
-command. Preserve agreed behavior and decisions; corrections may remain
-uncommitted. After code fixes, format and prepare current evidence, rerun
+command. Preserve agreed behavior and decisions; native semantic review requires scoped checkpoint commits before both axes. After code fixes, format and prepare current evidence, rerun
 authoritative checks and obtain independent inspection of the fix and affected
 behavior. Reviewers may retain evidence for unchanged areas only with an explicit
 scope justification; scope or architecture changes require broader review.
@@ -75,7 +72,9 @@ the relevant decision/spec or ticket before resuming and reverifying. Material
 scope expansion returns to `/to-spec` and `/to-tickets`. This bounds attempts at a
 finding, not the number of legitimate findings reviewers may raise.
 
-For carried snapshots only, the implementer may run `verify check`. A clean rebase
+The implementer may run the initial full applicable suite through `verify check`.
+Fresh behavioral inspection consumes its recorded results without repeating it.
+For carried snapshots only, existing review reports may accompany fresh checks. A clean rebase
 can carry independent reports through `verify prepare` when the own patches,
 plan, tools and checks are unchanged and upstream paths do not overlap scope or
 explicit inputs. Reports record `carried_from`; fresh checks are required before

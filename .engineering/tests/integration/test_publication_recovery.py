@@ -19,7 +19,7 @@ def test_failed_push_reuses_commit_authorization_and_evidence(repo, hosting):
     (repo / "Makefile").write_text(f"check:\n\t@echo check >> {STATE}/calls\n")
     change_plan(repo, paths=["app.txt", "Makefile"], tier="sensitive")
     review(repo, hosting)
-    checkout = repo / prepare(repo)["checkout"]
+    checkout = repo / prepare(repo)["check_checkout"]
     evidence = (repo / STATE / "example.json").read_bytes()
     hook = hosting[0] / "hooks/pre-receive"
     hook.write_text("#!/bin/sh\nexit 1\n")
