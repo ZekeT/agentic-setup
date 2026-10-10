@@ -26,6 +26,12 @@ class GitHTTPHandler(SimpleHTTPRequestHandler):
         pass  # Failed assertions already retain Git's command diagnostics.
 
 
+def quiet_maintenance(root):
+    """Stop background repacks, which race the dumb-HTTP server and the guard."""
+    git(root, "config", "gc.auto", "0")
+    git(root, "config", "maintenance.auto", "false")
+
+
 def refresh(source):
     run(
         sys.executable,
@@ -56,6 +62,7 @@ def prepared(tmp_path_factory):
     # Serve only a tiny fixture history, containing real starter distributions.
     shutil.rmtree(source / ".git")
     git(source, "init", "--quiet", "-b", "main")
+    quiet_maintenance(source)
     git(source, "config", "user.name", "Fixture")
     git(source, "config", "user.email", "fixture@example.invalid")
     inventory(source, add=[RETIRED])
@@ -70,6 +77,7 @@ def prepared(tmp_path_factory):
     )
     run(sys.executable, "engineering", "init-installation", cwd=consumer)
     git(consumer, "init", "--quiet", "-b", "main")
+    quiet_maintenance(consumer)
     git(consumer, "config", "user.name", "Fixture")
     git(consumer, "config", "user.email", "fixture@example.invalid")
     git(consumer, "add", ".")
