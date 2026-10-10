@@ -17,7 +17,7 @@ This directory holds implementation tickets; the completed [Wayfinder map](../en
 
 | Ticket | Blocked by | Status | PR |
 | --- | --- | --- | --- |
-| [01: Use native review evidence through publication](issues/01-native-review-evidence.md) | None | implemented | — |
+| [01: Use native review evidence through publication](issues/01-native-review-evidence.md) | None | merged | [#48](https://github.com/ZekeT/agentic-starter/pull/48) |
 | [02: Give prose changes appropriate assurance](issues/02-prose-assurance.md) | 01 | ready-for-agent | — |
 | [03: Verify and publish mechanical bookkeeping](issues/03-mechanical-bookkeeping.md) | 02 | ready-for-agent | — |
 | [04: Recognize genuinely inert comment changes](issues/04-inert-comments.md) | 02 | ready-for-agent | — |
@@ -26,7 +26,7 @@ This directory holds implementation tickets; the completed [Wayfinder map](../en
 | [07: Plan and recalibrate feature milestones](issues/07-milestone-planning.md) | None | ready-for-agent | — |
 | [08: Review and accept a milestone candidate](issues/08-milestone-acceptance.md) | 05, 07 | ready-for-agent | — |
 | [09: Format only the intended scope](issues/09-intended-formatting.md) | None | ready-for-agent | — |
-| [10: Remove duplicate checks and isolate reused fixtures](issues/10-check-fixture-optimization.md) | None | ready-for-agent | — |
+| [10: Remove duplicate checks and isolate reused fixtures](issues/10-check-fixture-optimization.md) | None | implemented | — |
 | [11: Route shipping with a truthful fallback](issues/11-shipping-routing.md) | None | ready-for-agent | — |
 | [12: Verify consumer transition and interrupted delivery](issues/12-consumer-transition.md) | 01, 02, 03, 04, 05, 06, 07, 08, 09, 11 | ready-for-agent | — |
 
@@ -40,4 +40,8 @@ No milestone groupings or closure reviews have been agreed for delivery yet. The
 
 ## Evidence and handoff
 
-Ticket 01 is implemented. The user authorized its two bounded review fixes on 2026-10-09; both are applied, consumer metadata is regenerated, and the corrected recovery regression passes. The following review found two evidence-recovery defects; the user authorized their fix on 2026-10-10. Earlier failed checks and findings remain historical evidence. See the ticket and local `native-review-evidence` verification record for current snapshot-bound full checks and independent reports; implementation status does not imply independent verification or human acceptance. The other tickets remain planning only. No human acceptance, PRs, or merges are recorded. Update individual tickets and this table together as work progresses. The final consumer journey depends on tickets 01–09 and 11; ticket 10 can be delivered independently and is not a consumer-transition blocker.
+Ticket 01 is merged: PR [#48](https://github.com/ZekeT/agentic-starter/pull/48) merged 2026-10-10 (local time) as `3a2f7ad`, after final independent evidence and human acceptance recorded in the ticket.
+
+Ticket 10 is implemented on `feat/check-fixture-optimization`; full recorded checks and independent reviews are pending in the local `check-fixture-optimization` verification record. Implementation status does not imply independent verification or human acceptance.
+
+Other tickets remain planning only. Update individual tickets and this table together as work progresses. The final consumer journey depends on tickets 01–09 and 11; ticket 10 can be delivered independently and is not a consumer-transition blocker.
