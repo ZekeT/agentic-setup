@@ -66,6 +66,12 @@ cannot lower them), never which Make targets exist:
 | Managed implementation matching a pinned starter update source | consumer | `make engineering-check`; sensitive review |
 | Any other path | both | nothing further |
 
+When a plan records both `make check` and `make engineering-check`, `verify
+check` tells the starter's check script that doctor and maintainability are
+recorded separately, so `make check` does not repeat them. PASS still requires
+the separate health result. Consumer-owned `make check` recipes run unchanged,
+and standalone `make check` keeps both checks.
+
 Consumer changes to `file`-owned managed bytes require the pinned-source route
 below. Proposed manifest digests cannot vouch for those bytes. Without that
 source, restore the file and obtain changes with `engineering update <project>`

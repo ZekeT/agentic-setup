@@ -18,7 +18,7 @@ def git(root, *args):
     ).stdout.strip()
 
 
-def cli(root, *args, status=0):
+def cli(root, *args, status=0, env=None):
     proc = subprocess.run(
         [
             sys.executable,
@@ -29,7 +29,7 @@ def cli(root, *args, status=0):
             "verify",
             *args,
         ],
-        env={**os.environ, "PYTHONPATH": str(TOOLING)},
+        env={**(env or os.environ), "PYTHONPATH": str(TOOLING)},
         capture_output=True,
         text=True,
     )

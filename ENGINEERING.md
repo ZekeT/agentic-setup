@@ -402,6 +402,8 @@ update/upstream route with pinned source evidence. See
 `make check` does not mutate source, fetch dependencies, update pins, build a
 Graft graph or invoke a model. Test/cache files may be produced. Run setup first;
 ordinary gates use offline uv with Python downloads disabled.
+Within `verify check`, the starter's `make check` skips doctor and
+maintainability only when `make engineering-check` is recorded in the same plan.
 Adopted projects keep their own `make check`; run `make engineering-check`
 alongside it. Their application environment, package manager and CI stay theirs.
 The starter's Python application targets are a template, not an adoption rule.

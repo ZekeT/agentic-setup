@@ -106,7 +106,7 @@
       "ownership": {
         "mode": "file"
       },
-      "upstream": "52a40a1660a4be253f1cdc25997b0dcf45ff6a99fb54037d5a3dd851ddc7181c"
+      "upstream": "f3494d1ee17549b9f6ec6e49e6674a5b33beb1792af4e538e0440c28f79f8f3c"
     },
     ".engineering/engineering/__init__.py": {
       "ownership": {
@@ -280,7 +280,7 @@
       "ownership": {
         "mode": "file"
       },
-      "upstream": "39ca36b4fb4b977b2b34b42454e627adabc273d27fdfdde91fcc17f547ff7265"
+      "upstream": "0ca7ecc7431fe7fede613c0164734d4378f32723d1602333ca4a17d4b7adb6fc"
     },
     ".engineering/engineering/verification_git.py": {
       "ownership": {
@@ -310,7 +310,7 @@
       "ownership": {
         "mode": "file"
       },
-      "upstream": "743c1d3367cdb7e836e13fdeeae06d95d604ef1b0355fd1851d44e6d1d030a01"
+      "upstream": "3d6d22c7ffa8ae5e17fdceabd781e450ec819d4e94b68a72d53ba1f38ab1a772"
     },
     ".engineering/engineering/verification_source.py": {
       "ownership": {
@@ -328,7 +328,7 @@
       "ownership": {
         "mode": "file"
       },
-      "upstream": "c5c22cc3595b1d21b9541500db6c576f10eb4e96b1b694965b28b08a10006e3e"
+      "upstream": "27e2814541ce4c3b0cc43ecc35c7b0b36bc2eab493d443f53cea2659b01358cb"
     },
     ".engineering/scripts/lib/change.sh": {
       "ownership": {
@@ -373,7 +373,7 @@
       "ownership": {
         "mode": "file"
       },
-      "upstream": "85a6f92849d11e418823df0631f980bd6d283b8392939e3114b0963f932fa28f"
+      "upstream": "b710737da208aaca0be7576c2304c29ee1481342e7567e05afc782f3eb875e35"
     },
     "Makefile": {
       "ownership": {
