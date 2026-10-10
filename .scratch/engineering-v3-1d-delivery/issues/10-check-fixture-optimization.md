@@ -4,7 +4,7 @@
 
 **Blocked by:** None (can start immediately).
 
-**Status:** implemented
+**Status:** published as PR #49; CI failed; fix committed locally, re-verification and push pending; not merged
 
 **Specification:** [Engineering v3-1d](../../engineering-v3-1d/spec.md)
 
@@ -29,3 +29,5 @@ Implemented on `feat/check-fixture-optimization`. The checked criteria describe 
 - User authorized on 2026-10-10: fix the Standards findings and Spec bookkeeping, split the commit, and remove unnecessary or tautological tests after auditing the whole suite. Removed as tautological in this ticket's additions: the copy-isolation test (only exercised `copytree`), a no-op guard assertion, and a standalone `engineering-check` assertion on a recipe that never reads the variable. Removed from the existing suite as redundant: `test_upstream_explicit_input_overlap_carries_nothing` (its forced plan change empties reports regardless of the overlap rule), `test_managed_implementation_edit_still_conflicts` (same scenario as `test_both_changed_conflicts_without_advancing_baselines`), `test_ordinary_roles_require_independent_sessions` (subsumed by the sensitive separate-session test), and `test_check_mutations_never_produce_current_proof` (merged into the native capture-immutability test); three body assertions implied by exact equality were also dropped. No unique behavior lost.
 - Review of the rebuilt commits (snapshot `d48470a5…`): Spec PASS; Standards CONCERNS that the composed-execution test rebuilt the shared `repo` fixture and that the root `conftest.py` imported a test module. User authorized both fixes on 2026-10-10: the test now uses the shared fixture, and `template_build.py` holds the build helper. Two full check runs on that snapshot exceeded the 1800-second command timeout under unrelated machine load (profile: 566 passed in 31 minutes, no hang, same per-test time on `main`); suite speed is tracked separately in `.scratch/engineering-test-speed/`.
 - Fresh full checks and independent reviews for the corrected scope are pending in the local verification record.
+- 2026-10-10: final evidence on snapshot `887ec054…` PASS (all four checks: 566 tests, 13/13 evals; Standards, Spec, Behavioral, Security PASS). Human accepted the presented scope via /ship; published as PR #49 (not merged). Merge remains a separate human decision.
+- 2026-10-10: CI on PR #49 failed `test_invalid_committed_source_distribution_is_rejected` (Git 2.55 on the runner). Cause: background loose-object maintenance after the test's commit raced the dumb-HTTP fixture server; the old per-test setup was slow enough to hide it. Reproduced locally by enabling the same maintenance task under Git 2.50 (fails before, passes after). Fix: disable automatic gc and maintenance in the update fixture repositories. Re-verification and renewed publication authorization are required before pushing.
