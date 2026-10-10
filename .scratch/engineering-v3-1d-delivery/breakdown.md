@@ -26,7 +26,7 @@ This directory holds implementation tickets; the completed [Wayfinder map](../en
 | [07: Plan and recalibrate feature milestones](issues/07-milestone-planning.md) | None | ready-for-agent | — |
 | [08: Review and accept a milestone candidate](issues/08-milestone-acceptance.md) | 05, 07 | ready-for-agent | — |
 | [09: Format only the intended scope](issues/09-intended-formatting.md) | None | ready-for-agent | — |
-| [10: Remove duplicate checks and isolate reused fixtures](issues/10-check-fixture-optimization.md) | None | published; CI failed; fix pending re-verification and push; not merged | [#49](https://github.com/ZekeT/agentic-starter/pull/49) |
+| [10: Remove duplicate checks and isolate reused fixtures](issues/10-check-fixture-optimization.md) | None | merged | [#49](https://github.com/ZekeT/agentic-starter/pull/49) |
 | [11: Route shipping with a truthful fallback](issues/11-shipping-routing.md) | None | ready-for-agent | — |
 | [12: Verify consumer transition and interrupted delivery](issues/12-consumer-transition.md) | 01, 02, 03, 04, 05, 06, 07, 08, 09, 11 | ready-for-agent | — |
 
@@ -42,6 +42,6 @@ No milestone groupings or closure reviews have been agreed for delivery yet. The
 
 Ticket 01 is merged: PR [#48](https://github.com/ZekeT/agentic-starter/pull/48) merged 2026-10-10 (local time) as `3a2f7ad`, after final independent evidence and human acceptance recorded in the ticket.
 
-Ticket 10's first scope passed independent verification (snapshot `887ec054…`), was accepted via /ship, and was published as PR [#49](https://github.com/ZekeT/agentic-starter/pull/49). CI then failed one fixture test on Git 2.55; the fix is committed locally but not yet independently verified or pushed, so PR #49 is not green. Not merged.
+Ticket 10's first scope passed independent verification (snapshot `887ec054…`), was accepted via /ship, and was published as PR [#49](https://github.com/ZekeT/agentic-starter/pull/49). CI then failed one fixture test on Git 2.55. The fix passed independent verification (snapshot `e8b420db…`), was pushed after /ship, and PR #49 was reopened at `3605731`, where CI passes. Ticket 10 is merged: PR #49 merged 2026-10-11 (local time) as `ea25766`.
 
 Other tickets remain planning only. Update individual tickets and this table together as work progresses. The final consumer journey depends on tickets 01–09 and 11; ticket 10 can be delivered independently and is not a consumer-transition blocker.
