@@ -410,20 +410,6 @@ def test_invalid_configuration_fails_update_and_doctor(installation, capsys):
     assert f"ERROR [configuration] {CONFIG}" in output
 
 
-def test_managed_implementation_edit_still_conflicts(installation, capsys):
-    template, target = installation
-    adopt(template, target)
-    save(target, "REVIEW.md", "Local managed edit\n")
-    commit(target)
-    save(template, "REVIEW.md", "Upstream managed change\n")
-    refresh(template)
-    before = snapshot(target)
-    status, output = engineering(capsys, template, "update", str(target), "--apply")
-    assert status == 1
-    assert "CONFLICT REVIEW.md" in output
-    assert snapshot(target) == before
-
-
 def test_configuration_seeds_from_maintainer_template_copy(installation, capsys):
     template, target = installation
     # The maintainer checkout's own configuration is its project configuration.

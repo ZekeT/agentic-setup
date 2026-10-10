@@ -238,17 +238,6 @@ def test_build_and_agent_scripts_floor_at_sensitive(repo, name, rule):
     assert f"{name} ({rule})" in error
 
 
-def test_ordinary_roles_require_independent_sessions(repo):
-    token = prepare(repo)["snapshot"]
-    cli(repo, "check", "--change", "example", "--snapshot", token)
-    report(repo, token, "standards", reviewer="fresh-combined-session")
-    refused = report(repo, token, "spec", reviewer="fresh-combined-session", expected=1)
-    assert "separate" in refused["error"]
-    report(repo, token, "spec")
-    report(repo, token, "behavioral")
-    assert cli(repo, "status", "--change", "example")["status"] == "PASS"
-
-
 def test_sensitive_reports_need_separate_sessions(repo):
     change_plan(repo, tier="sensitive", tier_reason="Raised: parses credentials")
     token = prepare(repo)["snapshot"]

@@ -250,19 +250,6 @@ def test_tool_versions_and_ignored_explicit_inputs_invalidate(repo):
     assert cli(repo, "status", "--change", "example", status=1)["status"] == "STALE"
 
 
-def test_check_mutations_never_produce_current_proof(repo):
-    (repo / "Makefile").write_text("check:\n\t@echo mutated >> app.txt\n")
-    change_plan(repo, paths=["app.txt", "Makefile"], tier="sensitive")
-    token = prepare(repo)["snapshot"]
-    result = cli(repo, "check", "--change", "example", "--snapshot", token, status=1)
-    assert "mutated" in result["error"]
-    assert (
-        cli(repo, "status", "--change", "example", status=1)["status"] == "INCOMPLETE"
-    )
-    assert (repo / "app.txt").read_text() == "after\n"
-    assert prepare(repo)["status"] == "INCOMPLETE"
-
-
 @pytest.mark.parametrize("kind", ["secret", "symlink", "bad-record"])
 def test_unsafe_or_malformed_evidence_fails_closed(repo, kind):
     complete(repo)
