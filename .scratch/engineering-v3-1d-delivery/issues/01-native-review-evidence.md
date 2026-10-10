@@ -4,7 +4,7 @@
 
 **Blocked by:** None (can start immediately).
 
-**Status:** implemented
+**Status:** merged
 
 **Specification:** [Engineering v3-1d](../../engineering-v3-1d/spec.md)
 
@@ -32,5 +32,6 @@ Implemented on `feat/native-review-evidence`. The checked criteria describe impl
 - Review of snapshot `8d4ad67c…` (checkpoint `9f57115`, not recorded): Spec and Security PASS; Standards CONCERNS that prepare silently swallowed the reason for non-reuse; Security noted remaining raw git errors (e.g. unrelated `merge-base`) still crashed prepare. User authorized both fixes on 2026-10-10: prepare now reports `history_note` and treats any git failure while validating an existing record as non-reusable history. Regression: `test_unrelated_comparison_history_is_not_reused`.
 - Follow-up (not in this ticket's scope): a raised check-execution error (timeout/interrupt) does not drop a carried behavioral report; pre-existing behavior.
 - Follow-up (not in this ticket's scope): superseded `checks-*` disposable copies are never removed (~400–500 MB each).
-- No human acceptance, push, PR/MR, or merge is recorded. Later documentation/bookkeeping exemptions and correction-check reuse remain unavailable.
-
+- 2026-10-10: final evidence on snapshot `9f032706…` PASS (all four checks; Standards, Spec, Behavioral, Security PASS). History rebuilt into three commits with identical tree to satisfy commit standards. Human accepted the presented scope via /ship; published as PR #48 (not merged). Merge remains a separate human decision.
+- 2026-10-10: PR #48 observed merged into `main` as `3a2f7ad` (local time 03:05 +0800; GitHub `mergedAt` 2026-10-09T19:05:41Z).
+- Superseded: No human acceptance, push, PR/MR, or merge is recorded. Later documentation/bookkeeping exemptions and correction-check reuse remain unavailable.

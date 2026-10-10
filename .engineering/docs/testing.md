@@ -92,6 +92,8 @@ a misplaced test visible in review.
 - Default to function scope. Widen to `session` only when construction is
   genuinely expensive, and only for something immutable — a shared mutable
   fixture creates order-dependent tests, which fail in ways that waste hours.
+  When tests must write, share the expensive preparation but give each test a
+  fresh copy (including its own Git history), and fail if the original changes.
 - Name fixtures as nouns (`invoice`, `db_session`), tests as behaviours.
 
 ## Naming

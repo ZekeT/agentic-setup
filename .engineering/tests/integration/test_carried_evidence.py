@@ -168,20 +168,6 @@ def test_changed_tool_output_carries_nothing(repo):
     assert prepare(repo)["reports"] == {}
 
 
-def test_upstream_explicit_input_overlap_carries_nothing(repo):
-    from .test_verification import change_plan
-
-    local = repo / "context.txt"
-    local.write_text("same\n")
-    change_plan(repo, inputs=["context.txt"])
-    complete(repo)
-    advance_and_rebase(repo, {"context.txt": "same\n"})
-    # Once tracked, the input must be added to paths. That plan change and the
-    # upstream overlap both require fresh inspection, even with identical bytes.
-    change_plan(repo, paths=["app.txt", "context.txt"])
-    assert prepare(repo)["reports"] == {}
-
-
 def test_carried_report_tampering_is_rejected(repo):
     complete(repo)
     advance_and_rebase(repo)

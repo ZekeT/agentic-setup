@@ -36,16 +36,11 @@ def commit_baseline(root):
 
 
 @pytest.fixture(scope="module")
-def pristine(tmp_path_factory):
-    """Build each installation kind once; tests work on disposable copies."""
+def pristine(tmp_path_factory, built_template):
+    """Prepare each installation kind once; tests work on disposable copies."""
     base = tmp_path_factory.mktemp("installations")
     generated = base / "generated"
-    run(
-        sys.executable,
-        str(ROOT / ".engineering/scripts/build_template.py"),
-        str(generated),
-        cwd=ROOT,
-    )
+    shutil.copytree(built_template, generated, symlinks=True)
     run(sys.executable, "-B", "engineering", "init-installation", cwd=generated)
     git(generated, "init", "--quiet", "-b", "main")
     commit_baseline(generated)

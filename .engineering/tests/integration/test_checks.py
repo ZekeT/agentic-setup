@@ -2,12 +2,17 @@
 
 from __future__ import annotations
 
+import json
 import os
 import shutil
 import subprocess
 from pathlib import Path
 
 import pytest
+from engineering.verification_execution import HEALTH_RECORDED
+
+from .test_verification import change_plan, cli, prepare
+from .test_verification import repo as repo
 
 ROOT = Path(__file__).parents[3]
 pytestmark = pytest.mark.integration
@@ -173,3 +178,46 @@ def test_doctor_failure_stops_gate_with_complete_output(tmp_path: Path) -> None:
     assert "✗ doctor" in proc.stderr
     assert "doctor-detail" in proc.stderr and "doctor-stderr" in proc.stderr
     assert "engineering maintainability" not in (tmp_path / "calls").read_text()
+
+
+def test_health_recorded_separately_is_not_repeated_by_make_check(
+    tmp_path: Path,
+) -> None:
+    env = check_fixture(tmp_path)
+    env[HEALTH_RECORDED] = "1"
+    proc = run(["make", "check"], tmp_path, env=env)
+    assert proc.returncode == 0, proc.stderr
+    assert "✓ doctor" not in proc.stdout and "✓ feature-docs" in proc.stdout
+    assert "recorded separately by make engineering-check" in proc.stdout
+    calls = (tmp_path / "calls").read_text()
+    assert "engineering doctor" not in calls
+    assert "engineering maintainability" not in calls
+
+
+PROBE = (
+    f'check:\n\t@echo "check health=$${{{HEALTH_RECORDED}:-run}}"\n'
+    f'engineering-check:\n\t@echo "health=$${{{HEALTH_RECORDED}:-run}}"\n'
+)
+
+
+@pytest.mark.parametrize("separate", [True, False])
+def test_verify_check_defers_health_only_to_its_own_recorded_check(
+    repo: Path, separate: bool
+) -> None:
+    (repo / "Makefile").write_text(PROBE)
+    checks = [["make", "check"]]
+    if separate:
+        checks.append(["make", "engineering-check"])
+    change_plan(repo, paths=["app.txt", "Makefile"], checks=checks, tier="sensitive")
+    token = prepare(repo)["snapshot"]
+    # An inherited variable never skips health checks the plan does not record.
+    env = {**os.environ, HEALTH_RECORDED: "1"}
+    cli(repo, "check", "--change", "example", "--snapshot", token, env=env)
+    record = json.loads(
+        (repo / ".engineering/state/verification/example.json").read_text()
+    )
+    outputs = [item["stdout"] for item in record["checks"]]
+    if separate:
+        assert outputs == ["check health=1\n", "health=run\n"]
+    else:
+        assert outputs == ["check health=run\n"]

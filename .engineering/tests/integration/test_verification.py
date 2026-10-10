@@ -18,7 +18,7 @@ def git(root, *args):
     ).stdout.strip()
 
 
-def cli(root, *args, status=0):
+def cli(root, *args, status=0, env=None):
     proc = subprocess.run(
         [
             sys.executable,
@@ -29,7 +29,7 @@ def cli(root, *args, status=0):
             "verify",
             *args,
         ],
-        env={**os.environ, "PYTHONPATH": str(TOOLING)},
+        env={**(env or os.environ), "PYTHONPATH": str(TOOLING)},
         capture_output=True,
         text=True,
     )
@@ -248,19 +248,6 @@ def test_tool_versions_and_ignored_explicit_inputs_invalidate(repo):
     complete(repo)
     dependency.write_text("pin-b\n")
     assert cli(repo, "status", "--change", "example", status=1)["status"] == "STALE"
-
-
-def test_check_mutations_never_produce_current_proof(repo):
-    (repo / "Makefile").write_text("check:\n\t@echo mutated >> app.txt\n")
-    change_plan(repo, paths=["app.txt", "Makefile"], tier="sensitive")
-    token = prepare(repo)["snapshot"]
-    result = cli(repo, "check", "--change", "example", "--snapshot", token, status=1)
-    assert "mutated" in result["error"]
-    assert (
-        cli(repo, "status", "--change", "example", status=1)["status"] == "INCOMPLETE"
-    )
-    assert (repo / "app.txt").read_text() == "after\n"
-    assert prepare(repo)["status"] == "INCOMPLETE"
 
 
 @pytest.mark.parametrize("kind", ["secret", "symlink", "bad-record"])

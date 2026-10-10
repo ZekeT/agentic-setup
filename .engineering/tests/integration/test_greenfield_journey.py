@@ -9,7 +9,6 @@ import sys
 import pytest
 
 from ..template_toolchain import toolchain
-from ..test_template import build
 from .test_publication import STATE
 from .test_publication import hosting as hosting
 from .test_verification import git
@@ -18,8 +17,8 @@ pytestmark = pytest.mark.integration
 
 
 @pytest.fixture
-def repo(tmp_path, monkeypatch):
-    root = build(tmp_path / "application")
+def repo(tmp_path, monkeypatch, generated):
+    root = generated(tmp_path / "application")
     for key, value in toolchain(tmp_path / "tools").items():
         monkeypatch.setenv(key, value)
     git(root, "init", "-b", "main")

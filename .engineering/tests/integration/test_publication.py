@@ -106,9 +106,6 @@ def test_committed_implementation_and_uncommitted_fix_publish_once(repo, hosting
     assert (checkout / STATE / "calls").read_text() == "check\n"
     receipt = json.loads((repo / STATE / "created.json").read_text())
     assert receipt["body"] == PR_BODY
-    assert "make check" in receipt["body"]
-    assert "No live provider tested" in receipt["body"]
-    assert "unrelated.txt" not in receipt["body"]
 
 
 @pytest.mark.parametrize(

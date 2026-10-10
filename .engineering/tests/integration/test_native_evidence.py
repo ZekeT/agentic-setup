@@ -76,9 +76,11 @@ def test_checks_leave_capture_immutable_even_when_command_mutates(repo):
     )
     assert "mutated" in result["error"]
     assert (repo / prepared["checkout"] / "app.txt").read_text() == "after\n"
+    assert (repo / "app.txt").read_text() == "after\n"
     assert (
         cli(repo, "status", "--change", "example", status=1)["status"] == "INCOMPLETE"
     )
+    assert prepare(repo)["status"] == "INCOMPLETE"
 
 
 @pytest.mark.parametrize("edit", ["addition", "deletion", "mode"])

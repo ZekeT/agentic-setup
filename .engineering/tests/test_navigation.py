@@ -11,7 +11,7 @@ from .template_toolchain import toolchain
 from .test_doctor import doctor, navigate, record_installed
 from .test_installation import adopt, engineering, installation
 from .test_migration import commit, save, snapshot
-from .test_template import build, contents, run
+from .test_template import contents, run
 
 __all__ = ["installation"]
 
@@ -47,8 +47,8 @@ def navigation_content(root):
     return present
 
 
-def test_generated_project_enables_and_disables_navigation(tmp_path):
-    root = build(tmp_path / "project")
+def test_generated_project_enables_and_disables_navigation(tmp_path, generated):
+    root = generated(tmp_path / "project")
     env = toolchain(tmp_path / "tools")
 
     def call(*args, cwd=root):

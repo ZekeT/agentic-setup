@@ -3,6 +3,7 @@
 import os
 import platform
 import subprocess
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
@@ -104,7 +105,13 @@ def repository_inputs(root: Path, plan: dict[str, Any]) -> dict[str, Any]:
     return result
 
 
-def run_command(root: Path, command: list[str], *, timeout: int) -> dict[str, Any]:
+def run_command(
+    root: Path,
+    command: list[str],
+    *,
+    timeout: int,
+    environment: Mapping[str, str] | None = None,
+) -> dict[str, Any]:
     """Execute an explicitly supplied argv without a shell or implicit installation."""
     result = subprocess.run(
         command,
@@ -112,7 +119,11 @@ def run_command(root: Path, command: list[str], *, timeout: int) -> dict[str, An
         capture_output=True,
         text=True,
         timeout=timeout,
-        env={**os.environ, "UV_OFFLINE": "1", "UV_PYTHON_DOWNLOADS": "never"},
+        env={
+            **(os.environ if environment is None else environment),
+            "UV_OFFLINE": "1",
+            "UV_PYTHON_DOWNLOADS": "never",
+        },
     )
     return {
         "command": command,

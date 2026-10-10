@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import fcntl
+import os
 import shutil
 import tempfile
 from collections.abc import Iterator
@@ -14,7 +15,11 @@ from .config import safe_path
 from .ownership import encoded
 from .transaction import write_files
 from .verification_checkout import validate_checkout
+from .verification_requirements import HEALTH, PROJECT
 from .verification_snapshot import run_command, snapshot
+
+# Starter check scripts skip doctor and maintainability when this is set.
+HEALTH_RECORDED = "ENGINEERING_HEALTH_RECORDED_SEPARATELY"
 
 
 @contextmanager
@@ -49,7 +54,12 @@ def execute_checks(root: Path, name: str, data: dict[str, Any]) -> None:
         data["reports"].pop("behavioral", None)
     write_files(root, {name: encoded(data)})
     for command in inputs["plan"]["checks"]:
-        result = run_command(checkout, command, timeout=1800)
+        result = run_command(
+            checkout,
+            command,
+            timeout=1800,
+            environment=environment_for(command, inputs["plan"]["checks"]),
+        )
         try:
             validate_checkout(checkout, inputs)
             validate_checkout(captured, inputs)
@@ -67,3 +77,17 @@ def execute_checks(root: Path, name: str, data: dict[str, Any]) -> None:
         if result["exit_code"]:
             data["reports"].pop("behavioral", None)
         write_files(root, {name: encoded(data)})
+
+
+def environment_for(command: list[str], checks: list[list[str]]) -> dict[str, str]:
+    """Let the project check defer health checks only to their own recorded run.
+
+    Outcome requires every planned result, so a skipped duplicate is covered
+    only by the separately recorded health check. Consumer recipes that ignore
+    the signal still run whatever they contain; an inherited value never applies.
+    """
+    environment = dict(os.environ)
+    environment.pop(HEALTH_RECORDED, None)
+    if command == PROJECT and HEALTH in checks:
+        environment[HEALTH_RECORDED] = "1"
+    return environment

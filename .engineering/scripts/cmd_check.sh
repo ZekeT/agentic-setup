@@ -45,8 +45,13 @@ case "${1:-all}" in
     run_quiet types types_check
     run_quiet tests tests_check
     # Engineering System tooling has its own runtime; preserve downstream project environments.
-    run_quiet doctor ./engineering doctor
-    run_quiet maintainability ./engineering maintainability
+    # Verification sets this only when it records make engineering-check separately.
+    if [ -n "${ENGINEERING_HEALTH_RECORDED_SEPARATELY:-}" ]; then
+      printf '%s\n' '- doctor, maintainability: recorded separately by make engineering-check'
+    else
+      run_quiet doctor ./engineering doctor
+      run_quiet maintainability ./engineering maintainability
+    fi
     run_quiet feature-docs uv run --no-project --isolated --python 3.12 python .engineering/scripts/check_feature_docs.py "$CHECK_SRC"
     ;;
   *) printf 'Unknown check mode: %s\n' "$1" >&2; exit 2 ;;
