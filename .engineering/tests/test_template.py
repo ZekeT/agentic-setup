@@ -8,20 +8,12 @@ from pathlib import Path
 
 import pytest
 
+from .template_build import BUILD, ROOT, build
 from .template_toolchain import toolchain
-
-ROOT = Path(__file__).parents[2]
-BUILD = ROOT / ".engineering/scripts/build_template.py"
 
 
 def run(*args, cwd=ROOT, **kwargs):
     return subprocess.run(args, cwd=cwd, capture_output=True, text=True, **kwargs)
-
-
-def build(destination):
-    result = run(sys.executable, str(BUILD), str(destination))
-    assert result.returncode == 0, result.stdout + result.stderr
-    return destination
 
 
 def contents(root):
@@ -75,8 +67,8 @@ def cli(root, *args):
     return run(sys.executable, "-B", str(root / "engineering"), *args, cwd=root)
 
 
-def test_initialize_missing_state_and_preserve_customization(tmp_path):
-    root = build(tmp_path / "project")
+def test_initialize_missing_state_and_preserve_customization(tmp_path, generated):
+    root = generated(tmp_path / "project")
     state = root / ".engineering/state/install.json"
     result = cli(root, "init-installation")
     assert result.returncode == 0, result.stdout + result.stderr
@@ -108,16 +100,16 @@ def test_maintainer_checkout_records_maintainer_role():
     assert state["role"] == "maintainer"
 
 
-def test_modified_distribution_cannot_become_an_initial_baseline(tmp_path):
-    root = build(tmp_path / "project")
+def test_modified_distribution_cannot_become_an_initial_baseline(tmp_path, generated):
+    root = generated(tmp_path / "project")
     (root / "REVIEW.md").write_text("Unknown distribution\n")
     result = cli(root, "init-installation")
     assert result.returncode != 0 and "hash mismatch" in result.stderr
     assert not (root / ".engineering/state/install.json").exists()
 
 
-def test_generated_project_setup_doctor_and_normal_gates(tmp_path):
-    root = build(tmp_path / "project")
+def test_generated_project_setup_doctor_and_normal_gates(tmp_path, generated):
+    root = generated(tmp_path / "project")
     env = toolchain(tmp_path / "tools")
 
     def command(*args):
@@ -186,8 +178,8 @@ def test_generated_project_setup_doctor_and_normal_gates(tmp_path):
     )
 
 
-def test_setup_refuses_invalid_baseline_before_network_install(tmp_path):
-    root = build(tmp_path / "project")
+def test_setup_refuses_invalid_baseline_before_network_install(tmp_path, generated):
+    root = generated(tmp_path / "project")
     env = toolchain(tmp_path / "tools")
     state = root / ".engineering/state/install.json"
     state.parent.mkdir()
@@ -225,8 +217,10 @@ def test_migration_runs_from_external_engineering_checkout(tmp_path):
     assert source.read_text() == "# Accounts\nUsers can sign in.\n"
 
 
-def test_consumer_migration_directs_to_external_checkout_without_writes(tmp_path):
-    root = build(tmp_path / "project")
+def test_consumer_migration_directs_to_external_checkout_without_writes(
+    tmp_path, generated
+):
+    root = generated(tmp_path / "project")
     before = contents(root)
     result = cli(root, "migrate", "openspec-project", "--apply")
     assert result.returncode == 1
@@ -291,8 +285,8 @@ def test_build_refuses_existing_destinations(tmp_path, kind):
     assert contents(tmp_path) == before
 
 
-def test_same_checkout_update_has_no_changes(tmp_path):
-    root = build(tmp_path / "project")
+def test_same_checkout_update_has_no_changes(tmp_path, generated):
+    root = generated(tmp_path / "project")
     assert cli(root, "init-installation").returncode == 0
     for args in (
         ("init", "-b", "main"),
@@ -318,11 +312,11 @@ def test_same_checkout_update_has_no_changes(tmp_path):
 
 @pytest.mark.parametrize("customized", [False, True])
 def test_update_previews_retired_payload_and_protects_customization(
-    tmp_path, customized
+    tmp_path, generated, customized
 ):
     import hashlib
 
-    root = build(tmp_path / "project")
+    root = generated(tmp_path / "project")
     assert cli(root, "init-installation").returncode == 0
     retired = (
         ".engineering/engineering/migrate/openspec.py",

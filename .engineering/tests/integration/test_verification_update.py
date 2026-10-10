@@ -10,6 +10,7 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 
 import pytest
 
+from ..immutable import unchanged
 from .test_verification import cli, git
 from .test_verification_requirements import CHECK, HEALTH, PLAN, ROOT, run
 
@@ -46,9 +47,11 @@ def inventory(source, *, add=(), remove=()):
     refresh(source)
 
 
-@pytest.fixture
-def update(tmp_path):
-    source = tmp_path / "source"
+@pytest.fixture(scope="module")
+def prepared(tmp_path_factory):
+    """Publish and apply the pinned update once; tests receive writable copies."""
+    base = tmp_path_factory.mktemp("update")
+    source = base / "source"
     git(ROOT, "clone", "--quiet", "--no-local", str(ROOT), str(source))
     # Serve only a tiny fixture history, containing real starter distributions.
     shutil.rmtree(source / ".git")
@@ -58,7 +61,7 @@ def update(tmp_path):
     inventory(source, add=[RETIRED])
     git(source, "add", ".")
     git(source, "commit", "--quiet", "-m", "old distribution")
-    consumer = tmp_path / "consumer"
+    consumer = base / "consumer"
     run(
         sys.executable,
         ".engineering/scripts/build_template.py",
@@ -81,7 +84,16 @@ def update(tmp_path):
     git(source, "tag", "-a", "update-v1", "-m", "pinned release")
     git(source, "update-server-info")
     run(sys.executable, "engineering", "update", str(consumer), "--apply", cwd=source)
+    with unchanged(base):
+        yield base, commit
 
+
+@pytest.fixture
+def update(prepared, tmp_path):
+    base, commit = prepared
+    source, consumer = tmp_path / "source", tmp_path / "consumer"
+    shutil.copytree(base / "source", source, symlinks=True)
+    shutil.copytree(base / "consumer", consumer, symlinks=True)
     handler = functools.partial(GitHTTPHandler, directory=str(source))
     server = ThreadingHTTPServer(("127.0.0.1", 0), handler)
     thread = threading.Thread(target=server.serve_forever, daemon=True)

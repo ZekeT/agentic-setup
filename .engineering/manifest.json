@@ -235,12 +235,14 @@
     },
     ".engineering/docs/testing.md": {
       "executable": false,
-      "owned_sha256": "dace7bb3174e56cba6641c58c2368aa0ca548889cd6617479a94e1b1c7e21c85",
+      "owned_sha256": "3bbd3a56526b58175ad67445c2fadeaa1372198a2b12f89692594f7af499a5f1",
       "ownership": {
         "mode": "file"
       },
-      "previous": [],
-      "sha256": "dace7bb3174e56cba6641c58c2368aa0ca548889cd6617479a94e1b1c7e21c85"
+      "previous": [
+        "dace7bb3174e56cba6641c58c2368aa0ca548889cd6617479a94e1b1c7e21c85"
+      ],
+      "sha256": "3bbd3a56526b58175ad67445c2fadeaa1372198a2b12f89692594f7af499a5f1"
     },
     ".engineering/docs/verification.md": {
       "executable": false,
