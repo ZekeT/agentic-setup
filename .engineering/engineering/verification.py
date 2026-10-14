@@ -14,10 +14,14 @@ from .ownership import encoded, json_object
 from .source import git
 from .transaction import write_files
 from .verification_carry import carried_reports
-from .verification_checkout import materialize, validate_checkout
+from .verification_checkout import (
+    checkout_requirements,
+    materialize,
+    validate_checkout,
+)
 from .verification_execution import evidence_lock, execute_checks
 from .verification_inputs import STATE, strings
-from .verification_requirements import REVIEWERS, TIERS, requirements
+from .verification_requirements import REVIEWERS, TIERS
 from .verification_semantic import AXES, validate_semantic
 from .verification_snapshot import (
     identity,
@@ -237,11 +241,12 @@ def validate_report(report: dict[str, Any], token: str) -> None:
 
 def operate(root: Path, args: argparse.Namespace) -> int:
     """Serialize evidence readers and writers for the selected change."""
-    with evidence_lock(root, location(root, args.change)):
-        return operate_locked(root, args)
+    name = location(root, args.change)
+    with evidence_lock(root, name):
+        return operate_locked(root, args, name)
 
 
-def operate_locked(root: Path, args: argparse.Namespace) -> int:
+def operate_locked(root: Path, args: argparse.Namespace, name: str) -> int:
     """Perform one evidence operation and emit a readable JSON result."""
     allowed = {
         "prepare": "plan",
@@ -256,7 +261,6 @@ def operate_locked(root: Path, args: argparse.Namespace) -> int:
                 if allowed[args.operation]
                 else "status accepts only --change"
             )
-    name = location(root, args.change)
     path = safe_path(root, name)
     if args.operation == "prepare":
         plan = read_plan(root, args.plan)
@@ -315,9 +319,7 @@ def operate_locked(root: Path, args: argparse.Namespace) -> int:
         else:
             reused = safe_path(root, data["checkout"])
             validate_checkout(reused, inputs)
-            data["requirements"] = requirements(
-                reused, inputs["plan"], inputs.get("starter_source")
-            )
+            data["requirements"] = checkout_requirements(root, reused, inputs)
         write_files(root, {name: encoded(data)})
     else:
         if not path.exists():
@@ -345,9 +347,7 @@ def operate_locked(root: Path, args: argparse.Namespace) -> int:
         checkout = safe_path(root, data.get("checkout", ""))
         validate_checkout(checkout, inputs)
         # Report the floor current rules give this scope, not the prepared one.
-        data["requirements"] = requirements(
-            checkout, data["inputs"]["plan"], inputs.get("starter_source")
-        )
+        data["requirements"] = checkout_requirements(root, checkout, inputs)
         if args.operation == "check":
             if args.snapshot != token:
                 raise ValueError("STALE check request: obtain the current snapshot")

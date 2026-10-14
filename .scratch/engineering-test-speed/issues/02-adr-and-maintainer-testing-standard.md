@@ -4,7 +4,7 @@
 
 **Blocked by:** None (can start immediately; independent of PR #50).
 
-**Status:** implemented on `docs/test-speed-adr`; independent verification pending (not accepted, published or merged)
+**Status:** merged (PR [#53](https://github.com/ZekeT/agentic-starter/pull/53))
 
 **Review tier:** ordinary at least (this ticket's tracking edits under `.scratch/`, and any standards file outside the configured documentation paths, floor at ordinary)
 
@@ -22,3 +22,4 @@
 
 - 2026-10-15: implemented. [ADR 0004](../../../docs/adr/0004-facts-and-pure-decisions-for-engineering-tests.md) is listed in the ADR index. The [engineering test standard](../../../docs-maintainer/engineering-testing-standard.md) lives in `docs-maintainer/`, which the template's positive inclusion list does not ship; `docs-maintainer/README.md` links it so Standards review finds it as a standards source. It describes the facts-and-decisions seam as arriving with tickets 04–06 and the subprocess guard as "planned"; ticket 04 should update both when the guard and first seam land. No distributed standard, testing guide, `ENGINEERING.md`, manifest or feature-local instruction file changed.
 - 2026-10-15: first review on snapshot `428f28b9…`: `make check` passed; Standards PASS and Spec PASS (non-blocking notes: commit body bundles merge bookkeeping, contract list repeated in ADR and standard, one over-long line); Behavioral FAIL because the standard's first rule described the facts value and decision functions as already existing. User authorized the fix: the rule now describes the seam as arriving with tickets 04–06, and the long line is wrapped. Re-verification pending.
+- 2026-10-15: re-verification PASS on snapshot `cdf3119e…`. Published as PR [#53](https://github.com/ZekeT/agentic-starter/pull/53), merged into `main` as `881b8e9` (local time 2026-10-15 01:21 +0800; GitHub `mergedAt` 2026-10-14T17:21:26Z).

@@ -10,6 +10,7 @@ from typing import Any
 from .config import safe_path
 from .growth import merge_base
 from .ownership import digest, encoded, json_object
+from .source import git
 from .verification_checkout import proposed_files, temporary_checkout
 from .verification_inputs import STATE, paths_from_git, source_path, strings
 from .verification_requirements import TIERS
@@ -80,10 +81,14 @@ def repository_inputs(root: Path, plan: dict[str, Any]) -> dict[str, Any]:
     )
     if omitted := committed - set(plan["paths"]):
         raise ValueError(f"Committed PR changes missing from scope: {sorted(omitted)}")
-    if paths_from_git(root, "ls-files", "--unmerged", "-z"):
+    # One index listing gives tracked paths and any unmerged (nonzero) stage.
+    index = git(root, "ls-files", "--stage", "-z").decode(errors="surrogateescape")
+    entries = [entry.split("\t", 1) for entry in index.split("\0") if entry]
+    if any(metadata.split()[2] != "0" for metadata, _ in entries):
         raise ValueError("Resolve unmerged entries before verification")
 
-    proposed = proposed_files(root, baseline, plan)
+    tracked = {name for _, name in entries}
+    proposed = proposed_files(root, baseline, plan, tracked)
     helper = Path(__file__).resolve().parents[1] / "scripts/lib/change.sh"
     resolved = subprocess.run(
         [
