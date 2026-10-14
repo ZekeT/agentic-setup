@@ -16,7 +16,7 @@ from .settings import (
     review_settings,
     validate,
 )
-from .source import git
+from .verification_git import Baseline
 from .verification_source import verify_update
 
 # Starter tooling directories; some files are distributed, but everything here
@@ -99,18 +99,22 @@ AGENT_POLICY = (
 
 
 def requirements(
-    checkout: Path, plan: dict[str, Any], starter_source: dict[str, Any] | None = None
+    checkout: Path,
+    base: Baseline,
+    plan: dict[str, Any],
+    starter_source: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Required checks, tier floor, per-path floor rules and reviewer roles.
 
     Rejects a plan that omits a required check or declares a tier below the
     floor. Checks come from recorded role and ownership, never from existing
-    targets; the tier changes reviewers, never checks.
+    targets; the tier changes reviewers, never checks. The checkout holds the
+    proposed content; base holds the comparison base's blobs.
     """
     # The recorded role is trusted (ADR 0001); absence blocks planning. The
     # stricter of base and proposed applies, so a role change counts once merged.
     role = installation_role(checkout)
-    if baseline_role(checkout) == "maintainer":
+    if baseline_role(base) == "maintainer":
         role = "maintainer"
     configured = (checkout / CONFIGURATION).is_file()
     if configured:
@@ -129,14 +133,14 @@ def requirements(
             "navigation disabled: remove the Graft check from the plan, or "
             'select [navigation] provider = "graft"'
         )
-    categories = classify(checkout, role, plan["paths"])
+    categories = classify(checkout, base, role, plan["paths"])
     if "starter_source" in plan:
         if starter_source is None:
             raise ValueError("Pinned starter source evidence is missing")
         verify_update(
             checkout,
             starter_source,
-            manifest_files(baseline(checkout, MANIFEST_PATH)) or {},
+            manifest_files(baseline(base, MANIFEST_PATH)) or {},
         )
     if (edited := categories["managed implementation"]) and starter_source is None:
         raise ValueError(
@@ -148,8 +152,8 @@ def requirements(
             "declare starter_source with the repository and pinned commit in the "
             "verification plan. Proposed manifest digests cannot vouch for bytes."
         )
-    paths = tier_paths(role, plan["paths"], base_and_proposed_settings(checkout))
-    floor_non_prose_documentation(checkout, paths)
+    paths = tier_paths(role, plan["paths"], base_and_proposed_settings(checkout, base))
+    floor_non_prose_documentation(checkout, base, paths)
     prose = (
         len(paths["documentation"]) == len(plan["paths"])
         and categories["project"] == sorted(plan["paths"])
@@ -207,7 +211,7 @@ def requirements(
 
 
 def floor_non_prose_documentation(
-    checkout: Path, paths: dict[str, dict[str, str]]
+    checkout: Path, base: Baseline, paths: dict[str, dict[str, str]]
 ) -> None:
     """Floor documentation paths at ordinary unless they are prose files.
 
@@ -215,20 +219,18 @@ def floor_non_prose_documentation(
     configured, present, non-executable Markdown file qualifies.
     """
     for name in list(paths["documentation"]):
-        if reason := prose_reason(checkout, name):
+        if reason := prose_reason(checkout, base, name):
             del paths["documentation"][name]
             paths["ordinary"][name] = reason
 
 
-def prose_reason(checkout: Path, name: str) -> str | None:
+def prose_reason(checkout: Path, base: Baseline, name: str) -> str | None:
     """Why a documentation path is not a prose file; None when it is."""
     if not name.endswith(SUFFIXES):
         return "unsupported documentation format"
     if read_bytes(checkout, name) is None:
         return "deleted document"
-    # A literal pathspec, so a name such as ":(top)x.md" is not pathspec magic.
-    listed = git(checkout, "ls-tree", "HEAD", "--", f":(literal){name}")
-    if (checkout / name).stat().st_mode & 0o111 or listed.startswith(b"100755"):
+    if (checkout / name).stat().st_mode & 0o111 or base.get(name, ("",))[0] == "100755":
         return "executable file"
     return None
 
@@ -268,14 +270,16 @@ def path_floor(
     return "ordinary", "no documentation rule"
 
 
-def base_and_proposed_settings(checkout: Path) -> list[dict[str, tuple[str, ...]]]:
+def base_and_proposed_settings(
+    checkout: Path, base: Baseline
+) -> list[dict[str, tuple[str, ...]]]:
     """Base and proposed review settings; a change cannot weaken its own floor.
 
     Starter lists come from the running verifier. Consumer updates to those
     lists require a pinned source and sensitive review (ADR 0002).
     """
     return [
-        review_settings(baseline(checkout, CONFIGURATION)),
+        review_settings(baseline(base, CONFIGURATION)),
         review_settings(read_bytes(checkout, CONFIGURATION)),
     ]
 
@@ -302,7 +306,9 @@ def path_matches(name: str, pattern: str) -> bool:
     )
 
 
-def classify(checkout: Path, role: str, paths: list[str]) -> dict[str, list[str]]:
+def classify(
+    checkout: Path, base: Baseline, role: str, paths: list[str]
+) -> dict[str, list[str]]:
     """Categorize each changed path by manifest ownership and installation role."""
     proposed = manifest_files(read_bytes(checkout, MANIFEST_PATH))
     if proposed is None:
@@ -311,7 +317,7 @@ def classify(checkout: Path, role: str, paths: list[str]) -> dict[str, list[str]
             "Restore the installation manifest before verification."
         )
     # Baseline ownership keeps a dropped entry from lowering requirements.
-    base = manifest_files(baseline(checkout, MANIFEST_PATH)) or {}
+    owned = manifest_files(baseline(base, MANIFEST_PATH)) or {}
     categories: dict[str, list[str]] = {
         "project configuration": [],
         "managed integration": [],
@@ -323,14 +329,14 @@ def classify(checkout: Path, role: str, paths: list[str]) -> dict[str, list[str]
     for name in sorted(paths):
         modes = {
             entry["ownership"]["mode"]
-            for entry in (proposed.get(name), base.get(name))
+            for entry in (proposed.get(name), owned.get(name))
             if entry is not None
         }
         if role == "maintainer" and (
             "file" in modes or name.startswith(MAINTAINER_TOOLING)
         ):
             category = "maintainer source"
-        elif "file" in modes and read_bytes(checkout, name) != baseline(checkout, name):
+        elif "file" in modes and read_bytes(checkout, name) != baseline(base, name):
             # Manifest digests are proposed content too, so they never vouch
             # for an edit or removal; a fetched starter source must vouch for it.
             category = "managed implementation"
@@ -347,21 +353,17 @@ def classify(checkout: Path, role: str, paths: list[str]) -> dict[str, list[str]
     return categories
 
 
-def baseline_role(checkout: Path) -> str | None:
+def baseline_role(base: Baseline) -> str | None:
     """The comparison base's recorded role, or None before it was recorded."""
-    raw = baseline(checkout, STATE_PATH)
+    raw = baseline(base, STATE_PATH)
     role = None if raw is None else json_object(raw).get("role")
     return role if role in ROLES else None
 
 
-def baseline(checkout: Path, name: str) -> bytes | None:
-    """Read a path from the checkout's baseline commit, None when absent.
-
-    Relies on materialize() having set the checkout HEAD to the plan base.
-    """
-    if not git(checkout, "ls-tree", "--name-only", "HEAD", "--", name):
-        return None
-    return git(checkout, "show", f"HEAD:{name}")
+def baseline(base: Baseline, name: str) -> bytes | None:
+    """A path's bytes at the comparison base, None when absent."""
+    entry = base.get(name)
+    return None if entry is None else entry[1]
 
 
 def manifest_files(raw: bytes | None) -> dict[str, Any] | None:

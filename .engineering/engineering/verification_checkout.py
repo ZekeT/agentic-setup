@@ -8,7 +8,7 @@ from typing import Any
 
 from .ownership import digest
 from .source import git
-from .verification_git import baseline_content
+from .verification_git import baseline_blobs, baseline_content
 from .verification_inputs import (
     STATE,
     files,
@@ -18,10 +18,11 @@ from .verification_inputs import (
 from .verification_requirements import requirements
 
 
-def proposed_files(root: Path, base: str, plan: dict[str, Any]) -> dict[str, Any]:
+def proposed_files(
+    root: Path, base: str, plan: dict[str, Any], tracked: set[str]
+) -> dict[str, Any]:
     """Working bytes win for selected paths; other files come from the base."""
     result: dict[str, Any] = {}
-    tracked = paths_from_git(root, "ls-files", "--cached", "-z")
     if set(plan["inputs"]) & tracked - set(plan["paths"]):
         raise ValueError("Tracked explicit inputs must be included in intended paths")
     selected = set(plan["paths"]) | set(plan["inputs"])
@@ -76,15 +77,26 @@ def materialize(
     # and base-plus-proposed ownership (ADR 0001), never a default or an
     # out-of-scope working edit; checked on every reuse, so status and
     # publication recompute the tier floor for the current scope.
-    return requirements(destination, plan, inputs.get("starter_source"))
+    return checkout_requirements(root, destination, inputs)
+
+
+def checkout_requirements(
+    root: Path, checkout: Path, inputs: dict[str, Any]
+) -> dict[str, Any]:
+    """Requirements for a checkout of these inputs, reusing the baseline reads."""
+    return requirements(
+        checkout,
+        baseline_blobs(root, inputs["base"]),
+        inputs["plan"],
+        inputs.get("starter_source"),
+    )
 
 
 def validate_checkout(checkout: Path, inputs: dict[str, Any]) -> None:
     """Detect modified, removed and unexpected nonignored source in the review tree."""
     expected = inputs["files"]
-    names = set(expected) | paths_from_git(checkout, "ls-files", "--cached", "-z")
-    names |= paths_from_git(
-        checkout, "ls-files", "--others", "--exclude-standard", "-z"
+    names = set(expected) | paths_from_git(
+        checkout, "ls-files", "--cached", "--others", "--exclude-standard", "-z"
     )
     if files(checkout, names) != expected:
         raise ValueError(

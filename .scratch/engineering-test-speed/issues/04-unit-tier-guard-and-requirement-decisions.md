@@ -25,3 +25,4 @@
 - [ ] Remaining end-to-end tests that need prepared repositories reuse the immutable shared preparation pattern (shared build, fresh writable copy, write guard) where safe
 - [ ] Verification record schema, snapshot identity, CLI surface and review-tier policy are unchanged
 - [ ] Local unit-tier and full-suite timings are recorded in this ticket
+- [ ] The maintainer engineering test standard no longer calls the subprocess guard "planned" or the decision seam future work once both land (follow-up from ticket 02)

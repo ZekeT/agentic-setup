@@ -4,7 +4,7 @@
 
 **Blocked by:** None.
 
-**Status:** broken down — see [spec](../spec.md) and tickets 02–07 below; ticket 02 implemented, verification pending
+**Status:** broken down — see [spec](../spec.md) and tickets 02–07 below; ticket 02 merged; ticket 03 in progress
 
 ## Problem
 
@@ -54,7 +54,7 @@ Specified 2026-10-14 in [spec.md](../spec.md). Confirmed with the user: seams ar
 
 ## Breakdown
 
-Broken down 2026-10-14 via `/to-tickets`; breakdown approved by the user. Work the frontier: a ticket can start when all its blockers are done. Tickets 02 and 03 are currently on the frontier; ticket 02 is implemented on `docs/test-speed-adr` (verification pending).
+Broken down 2026-10-14 via `/to-tickets`; breakdown approved by the user. Work the frontier: a ticket can start when all its blockers are done. Ticket 02 merged as PR [#53](https://github.com/ZekeT/agentic-starter/pull/53) (`881b8e9`); ticket 03 is the frontier.
 
 The spec and tickets were published as PR [#51](https://github.com/ZekeT/agentic-starter/pull/51), merged into `main` as `3f4e617` (local time 2026-10-15 00:31 +0800; GitHub `mergedAt` 2026-10-14T16:31:56Z). The source-fetch maintenance fix that had to land before ticket 03 merged as PR [#52](https://github.com/ZekeT/agentic-starter/pull/52).
 
