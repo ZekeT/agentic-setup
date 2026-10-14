@@ -3,6 +3,7 @@
 import functools
 import hashlib
 import json
+import os
 import shutil
 import sys
 import threading
@@ -154,6 +155,36 @@ def test_applied_update_prepares_with_pinned_distribution_evidence(update):
     missing = prepare(update, status=1)
     assert "engineering-check" in missing["error"]
     assert "engineering-test" not in missing["error"]
+
+
+def test_source_fetch_starts_no_background_git_maintenance(update, tmp_path):
+    consumer, _, _ = update
+    # Detached maintenance outlives the fetch and races temporary-repository cleanup.
+    trace, shim = tmp_path / "trace.jsonl", tmp_path / "bin" / "git"
+    shim.parent.mkdir()
+    shim.write_text(
+        f'#!/bin/sh\nGIT_TRACE2_EVENT="{trace}" exec "{shutil.which("git")}" "$@"\n'
+    )
+    shim.chmod(0o755)
+    path = f"{shim.parent}{os.pathsep}{os.environ['PATH']}"
+    cli(
+        consumer,
+        "prepare",
+        "--change",
+        "update",
+        "--plan",
+        PLAN,
+        env={**os.environ, "PATH": path},
+    )
+    events = [json.loads(line) for line in trace.read_text().splitlines()]
+    assert any("fetch" in event.get("argv", []) for event in events)
+    started = [
+        " ".join(event["argv"])
+        for event in events
+        if event.get("event") == "child_start"
+        and {"maintenance", "gc"} & set(event["argv"])
+    ]
+    assert started == []
 
 
 def test_update_source_always_requires_security_review(update):

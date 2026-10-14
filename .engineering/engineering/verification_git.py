@@ -21,6 +21,12 @@ def git_environment() -> dict[str, str]:
         GIT_NO_REPLACE_OBJECTS="1",
         GIT_TERMINAL_PROMPT="0",
         GIT_SSH_COMMAND="ssh -oBatchMode=yes -oStrictHostKeyChecking=yes",
+        # Detached auto-maintenance outlives the command and races temp cleanup.
+        GIT_CONFIG_COUNT="2",
+        GIT_CONFIG_KEY_0="maintenance.auto",
+        GIT_CONFIG_VALUE_0="false",
+        GIT_CONFIG_KEY_1="gc.auto",
+        GIT_CONFIG_VALUE_1="0",
     )
     return environment
 
