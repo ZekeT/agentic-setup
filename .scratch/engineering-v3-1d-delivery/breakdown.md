@@ -18,7 +18,7 @@ This directory holds implementation tickets; the completed [Wayfinder map](../en
 | Ticket | Blocked by | Status | PR |
 | --- | --- | --- | --- |
 | [01: Use native review evidence through publication](issues/01-native-review-evidence.md) | None | merged | [#48](https://github.com/ZekeT/agentic-starter/pull/48) |
-| [02: Give prose changes appropriate assurance](issues/02-prose-assurance.md) | 01 | file-type classification implemented; verification pending | — |
+| [02: Give prose changes appropriate assurance](issues/02-prose-assurance.md) | 01 | merged | [#50](https://github.com/ZekeT/agentic-starter/pull/50) |
 | [03: Verify and publish mechanical bookkeeping](issues/03-mechanical-bookkeeping.md) | 02 | ready-for-agent | — |
 | [04: Recognize genuinely inert comment changes](issues/04-inert-comments.md) | 02 | ready-for-agent | — |
 | [05: Carry honest evidence through corrections](issues/05-correction-lineage.md) | 01, 02, 03 | ready-for-agent | — |
@@ -44,7 +44,7 @@ Ticket 01 is merged: PR [#48](https://github.com/ZekeT/agentic-starter/pull/48) 
 
 Ticket 10's first scope passed independent verification (snapshot `887ec054…`), was accepted via /ship, and was published as PR [#49](https://github.com/ZekeT/agentic-starter/pull/49). CI then failed one fixture test on Git 2.55. The fix passed independent verification (snapshot `e8b420db…`), was pushed after /ship, and PR #49 was reopened at `3605731`, where CI passes. Ticket 10 is merged: PR #49 merged 2026-10-11 (local time) as `ea25766`.
 
-Ticket 02 is implemented on `feat/prose-assurance`. Three independent reviews failed on content classification (Security, Behavioral). On 2026-10-14 the user chose file-type classification instead, superseding the ticket's content-inspection requirement; recorded on the ticket and awaiting fresh verification. Human acceptance and publication are pending.
+Ticket 02 is merged: after three independent reviews failed on content classification, the user chose file-type classification on 2026-10-14 (recorded on the ticket). PR [#50](https://github.com/ZekeT/agentic-starter/pull/50) merged 2026-10-14 (local time) as `6a5b40c`.
 
 Follow-up (needs-triage, from ticket 02 grilling 2026-10-14): decide whether `.scratch` planning, research and experiment notes should receive lighter review than ordinary paths; tracker acceptance criteria are requirements and intersect tickets 03 and 12.
 
