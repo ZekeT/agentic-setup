@@ -280,13 +280,19 @@
       "ownership": {
         "mode": "file"
       },
-      "upstream": "2ba393927a967989110060aed3abc7ceb938cd4b89c31ebd9b0b145343075c55"
+      "upstream": "3d4c1e47c997bcaf30e93acc48810d1b67e18c50358375525ee191b192d01772"
     },
     ".engineering/engineering/verification_execution.py": {
       "ownership": {
         "mode": "file"
       },
       "upstream": "0ca7ecc7431fe7fede613c0164734d4378f32723d1602333ca4a17d4b7adb6fc"
+    },
+    ".engineering/engineering/verification_facts.py": {
+      "ownership": {
+        "mode": "file"
+      },
+      "upstream": "803909a2c54c9f4728d8494cc7edf59e42c8ddd29449b1da5fa075b6bb288d9a"
     },
     ".engineering/engineering/verification_git.py": {
       "ownership": {
@@ -304,7 +310,7 @@
       "ownership": {
         "mode": "file"
       },
-      "upstream": "8466b0936af07a8a031c431601e03362910e10741ecb61fafb5710adaab9b013"
+      "upstream": "de692bb1ece64bd49bac6c46309790a9bf489eb48fe5d33254c2658c4b14eef0"
     },
     ".engineering/engineering/verification_semantic.py": {
       "ownership": {
@@ -316,7 +322,7 @@
       "ownership": {
         "mode": "file"
       },
-      "upstream": "66ce7da9352827110b4d3c1b64c50572d93eb4a29dc3c9140fde8ec7a2c7ecbf"
+      "upstream": "ad5ca4a69eb505ffc713e7018d7921aa69f98eb07b51f7da427c7c452ad7cdc8"
     },
     ".engineering/engineering/verification_source.py": {
       "ownership": {

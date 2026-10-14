@@ -26,6 +26,14 @@ def read_plan(root: Path, name: str) -> dict[str, Any]:
 
 def validate_plan(root: Path, plan: dict[str, Any]) -> None:
     """Apply the same contract to new plans and stored evidence."""
+    plan_shape(plan)
+    for field in ("paths", "inputs"):
+        for path in plan[field]:
+            source_path(root, path)
+
+
+def plan_shape(plan: dict[str, Any]) -> None:
+    """Reject a malformed plan from its fields alone, before any path lookup."""
     fields = {
         "base",
         "requirement",
@@ -58,7 +66,6 @@ def validate_plan(root: Path, plan: dict[str, Any]) -> None:
         if len(values) != len(set(values)):
             raise ValueError(f"{field}: duplicate paths")
         for path in values:
-            source_path(root, path)
             if path == STATE or path.startswith(STATE + "/"):
                 raise ValueError("Verification bookkeeping cannot be a source input")
     for field in ("checks", "tools"):

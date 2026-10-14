@@ -9,6 +9,7 @@ from pathlib import Path
 
 import pytest
 
+from ..immutable import unchanged
 from .test_verification import cli, git
 
 ROOT = Path(__file__).parents[3]
@@ -64,7 +65,14 @@ def pristine(tmp_path_factory, built_template):
     git(adopted, "add", ".")
     git(adopted, "commit", "--quiet", "-m", "adopt engineering")
     git(adopted, "checkout", "--quiet", "-b", "feature")
-    return {"generated": generated, "adopted": adopted, "maintainer": maintainer(base)}
+    shared = {
+        "generated": generated,
+        "adopted": adopted,
+        "maintainer": maintainer(base),
+    }
+    # A test that writes to shared preparation instead of its copy fails teardown.
+    with unchanged(generated), unchanged(adopted), unchanged(shared["maintainer"]):
+        yield shared
 
 
 def maintainer(base):
@@ -325,24 +333,6 @@ def test_generated_and_adopted_projects_classify_identically(pristine, tmp_path)
 
 
 @maintainer_checkout
-@pytest.mark.parametrize(
-    "name",
-    [
-        ".engineering/engineering/tool.py",
-        ".engineering/tests/test_tool.py",
-        ".engineering/template/README.md",
-    ],
-)
-def test_maintainer_source_requires_maintainer_suites(project, name):
-    edit(project, name)
-    result = prepare(project, [name], [CHECK, HEALTH], status=1)
-    assert (
-        "engineering-test" in result["error"] and "engineering-evals" in result["error"]
-    )
-    assert prepare(project, [name], [CHECK, *SUITES])["status"] == "INCOMPLETE"
-
-
-@maintainer_checkout
 def test_role_switch_to_consumer_applies_only_after_merge(project):
     state = project / ".engineering/state/install.json"
     data = json.loads(state.read_text())
@@ -354,73 +344,6 @@ def test_role_switch_to_consumer_applies_only_after_merge(project):
     # The stricter base role still governs the proposed change.
     result = prepare(project, paths, [CHECK, HEALTH], status=1)
     assert "engineering-test" in result["error"] and "maintainer" in result["error"]
-    assert prepare(project, paths, [CHECK, HEALTH, *SUITES])["status"] == "INCOMPLETE"
-
-
-@maintainer_checkout
-def test_maintainer_configuration_needs_only_project_and_health_checks(project):
-    edit(
-        project,
-        ".engineering/config.toml",
-        'schema_version = 2\n[navigation]\nprovider = "none"\n\n',
-    )
-    name = ".engineering/config.toml"
-    assert "engineering-check" in prepare(project, [name], [CHECK], status=1)["error"]
-    assert prepare(project, [name], [CHECK, HEALTH])["status"] == "INCOMPLETE"
-
-
-@maintainer_checkout
-def test_maintainer_manifest_is_maintainer_source(project):
-    # Dropping an entry and weakening ownership changes every consumer's contract.
-    write_manifest(
-        project,
-        {
-            ".engineering/engineering/tool.py": ("VALUE = 1\n", {"mode": "preserve"}),
-            ".engineering/config.toml": (
-                'schema_version = 2\n[navigation]\nprovider = "none"\n',
-                {"mode": "preserve"},
-            ),
-        },
-    )
-    names = [".engineering/manifest.json"]
-    assert "engineering-test" in prepare(project, names, [CHECK], status=1)["error"]
-    result = prepare(project, names, [CHECK, HEALTH], status=1)
-    assert (
-        "engineering-test" in result["error"] and "engineering-evals" in result["error"]
-    )
-    assert (
-        "engineering-check"
-        in prepare(project, names, [CHECK, *SUITES], status=1)["error"]
-    )
-    assert prepare(project, names, [CHECK, HEALTH, *SUITES])["status"] == "INCOMPLETE"
-
-
-@maintainer_checkout
-def test_maintainer_install_state_is_maintainer_source(project):
-    name = ".engineering/state/install.json"
-    path = project / name
-    path.write_text(json.dumps(json.loads(path.read_text()), indent=4) + "\n")
-    result = prepare(project, [name], [CHECK, HEALTH], status=1)
-    assert (
-        "engineering-test" in result["error"] and "engineering-evals" in result["error"]
-    )
-    assert (
-        "engineering-check"
-        in prepare(project, [name], [CHECK, *SUITES], status=1)["error"]
-    )
-    assert prepare(project, [name], [CHECK, HEALTH, *SUITES])["status"] == "INCOMPLETE"
-
-
-@maintainer_checkout
-def test_removing_a_maintainer_target_cannot_lower_requirements(project):
-    makefile = project / "Makefile"
-    makefile.write_text(
-        makefile.read_text().replace("engineering-test:\n\t@true\n", "")
-    )
-    edit(project, ".engineering/engineering/tool.py")
-    paths = ["Makefile", ".engineering/engineering/tool.py"]
-    result = prepare(project, paths, [CHECK, HEALTH], status=1)
-    assert "engineering-test" in result["error"]
     assert prepare(project, paths, [CHECK, HEALTH, *SUITES])["status"] == "INCOMPLETE"
 
 

@@ -8,6 +8,7 @@ from typing import Any
 
 from .ownership import digest
 from .source import git
+from .verification_facts import gather
 from .verification_git import baseline_blobs, baseline_content
 from .verification_inputs import (
     STATE,
@@ -84,12 +85,14 @@ def checkout_requirements(
     root: Path, checkout: Path, inputs: dict[str, Any]
 ) -> dict[str, Any]:
     """Requirements for a checkout of these inputs, reusing the baseline reads."""
-    return requirements(
+    plan = inputs["plan"]
+    facts = gather(
         checkout,
         baseline_blobs(root, inputs["base"]),
-        inputs["plan"],
+        plan,
         inputs.get("starter_source"),
     )
+    return requirements(facts, plan)
 
 
 def validate_checkout(checkout: Path, inputs: dict[str, Any]) -> None:

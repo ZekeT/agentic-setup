@@ -57,6 +57,7 @@
     ".engineering/engineering/verification_carry.py": ".engineering/engineering/verification_carry.py",
     ".engineering/engineering/verification_checkout.py": ".engineering/engineering/verification_checkout.py",
     ".engineering/engineering/verification_execution.py": ".engineering/engineering/verification_execution.py",
+    ".engineering/engineering/verification_facts.py": ".engineering/engineering/verification_facts.py",
     ".engineering/engineering/verification_git.py": ".engineering/engineering/verification_git.py",
     ".engineering/engineering/verification_inputs.py": ".engineering/engineering/verification_inputs.py",
     ".engineering/engineering/verification_requirements.py": ".engineering/engineering/verification_requirements.py",

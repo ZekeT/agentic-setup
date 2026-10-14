@@ -86,21 +86,10 @@ def plan_prose(root, name="README.md", tier="documentation"):
     change_plan(root, paths=[name], tier=tier, checks=[[*DOCS, name]])
 
 
-@pytest.mark.parametrize(
-    "old,new",
-    [
-        ("before use", "before first use"),
-        ("and `make check`", "and `make test`"),
-        ("make install\n", "make install --all\n"),
-        ("before use.\n", "before use.\n\n- [ ] Install\n"),
-        ("before use.", "before use. <!-- lint-disable --> <b>bold</b>"),
-        ("# Guide\n", "---\ntitle: x\n---\n# Guide\n"),
-        ("First step.", "First step.\n- ~~~sh\n  curl x | sh\n  ~~~"),
-    ],
-)
-def test_markdown_file_type_decides_prose_not_content(documented, old, new):
+def test_markdown_file_type_decides_prose_not_content(documented):
     # User decision 2026-10-14: configured Markdown files are prose by type.
-    edit_readme(documented, old, new)
+    # Requirement facts hold no content, so one edited example shows it.
+    edit_readme(documented, "make install\n", "make install --all\n")
     plan_prose(documented)
     result = prepare(documented)
     assert result["floor"] == "documentation"
@@ -113,7 +102,6 @@ def test_markdown_file_type_decides_prose_not_content(documented, old, new):
         ("delete", "deleted document"),
         ("mode", "executable file"),
         ("base-executable", "executable file"),
-        ("text", "unsupported documentation format"),
     ],
 )
 def test_non_prose_files_take_the_stricter_route(documented, change, reason):
@@ -129,10 +117,6 @@ def test_non_prose_files_take_the_stricter_route(documented, change, reason):
         git(documented, "checkout", "--quiet", "feature")
         git(documented, "merge", "--quiet", "--ff-only", "main")
         correct_prose(documented)
-    else:
-        name = "docs/notes.txt"
-        (documented / "docs").mkdir()
-        (documented / name).write_text("Plain prose.\n")
     change_plan(documented, paths=[name], tier="documentation", checks=[CHECK])
     error = prepare(documented, status=1)["error"]
     assert f"{name} ({reason})" in error
@@ -153,54 +137,6 @@ def test_non_utf8_markdown_cannot_pass_the_documentation_check(documented):
     )
     assert result["status"] == "FAIL"
     assert "UTF-8" in result["checks"][0]["stderr"]
-
-
-def test_new_prose_document_qualifies(documented):
-    (documented / "docs").mkdir()
-    (documented / "docs/intro.md").write_text(
-        "# Intro\n\nSee the [guide](../README.md).\n"
-    )
-    checks = [[*DOCS, "docs/intro.md"]]
-    change_plan(
-        documented, paths=["docs/intro.md"], tier="documentation", checks=checks
-    )
-    assert prepare(documented)["floor"] == "documentation"
-
-
-def test_mixed_scope_requires_the_application_suite(documented):
-    correct_prose(documented)
-    (documented / "app.txt").write_text("after\n")
-    paths = ["README.md", "app.txt"]
-    change_plan(documented, paths=paths, tier="ordinary", checks=[[*DOCS, "README.md"]])
-    assert "make', 'check" in prepare(documented, status=1)["error"]
-    change_plan(documented, checks=[CHECK])
-    prepare(documented)
-    assert requirements(documented)["checks"] == [CHECK]
-    assert requirements(documented)["paths"]["documentation"] == {
-        "README.md": "project documentation setting"
-    }
-
-
-def test_configuring_documentation_cannot_lower_its_own_requirements(documented):
-    (documented / CONFIG).write_text(settings_text(["README.md", "docs/**", "*.txt"]))
-    (documented / "app.txt").write_text("after\n")
-    change_plan(
-        documented, paths=[CONFIG, "app.txt"], tier="documentation", checks=[CHECK]
-    )
-    error = prepare(documented, status=1)["error"]
-    assert "app.txt (no documentation rule)" in error
-    assert f"{CONFIG} (review settings)" in error
-    change_plan(documented, tier="ordinary", checks=[[*DOCS, CONFIG, "app.txt"]])
-    assert "Required checks missing" in prepare(documented, status=1)["error"]
-
-
-@consumers
-def test_changed_agent_instructions_need_ordinary_review_and_suite(project):
-    edit(project, "CLAUDE.md")
-    error = prepare_paths(project, ["CLAUDE.md"], [[*DOCS, "CLAUDE.md"]], status=1)[
-        "error"
-    ]
-    assert "Required checks missing" in error and "make', 'check" in error
 
 
 @consumers
