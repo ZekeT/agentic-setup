@@ -210,7 +210,7 @@ def reject_below_floor(
 
 
 def floor_non_prose_documentation(
-    facts: Mapping[str, PathFacts], paths: dict[str, dict[str, str]]
+    observed: Mapping[str, PathFacts], paths: dict[str, dict[str, str]]
 ) -> None:
     """Floor documentation paths at ordinary unless they are prose files.
 
@@ -218,18 +218,18 @@ def floor_non_prose_documentation(
     configured, present, non-executable Markdown file qualifies.
     """
     for name in list(paths["documentation"]):
-        if reason := prose_reason(name, facts[name]):
+        if reason := prose_reason(name, observed[name]):
             del paths["documentation"][name]
             paths["ordinary"][name] = reason
 
 
-def prose_reason(name: str, facts: PathFacts) -> str | None:
+def prose_reason(name: str, path: PathFacts) -> str | None:
     """Why a documentation path is not a prose file; None when it is."""
     if not name.endswith(SUFFIXES):
         return "unsupported documentation format"
-    if not facts.present:
+    if not path.present:
         return "deleted document"
-    if facts.executable or facts.base_executable:
+    if path.executable or path.base_executable:
         return "executable file"
     return None
 

@@ -177,6 +177,13 @@ def change_plan(root, **changes):
     path.write_text(json.dumps({**plan, **changes}))
 
 
+def test_public_environment_template_can_be_planned(repo):
+    (repo / ".env.template").write_text("API_TOKEN=\n")
+    change_plan(repo, paths=["app.txt", ".env.template"])
+    result = prepare(repo)
+    assert result["status"] == "INCOMPLETE" and result["floor"] == "ordinary"
+
+
 def test_moved_comparison_branch_preserves_same_merge_base_evidence(repo):
     complete(repo)
     old = git(repo, "rev-parse", "main")

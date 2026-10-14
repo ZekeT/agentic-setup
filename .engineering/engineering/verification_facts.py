@@ -18,6 +18,7 @@ from .settings import (
     validate,
 )
 from .verification_git import Baseline
+from .verification_inputs import source_path
 from .verification_source import verify_update
 
 # Review settings as documentation and sensitive path patterns.
@@ -85,12 +86,15 @@ def gather(
     )
     paths = {}
     for name in plan["paths"]:
-        raw = read_bytes(checkout, name)
+        # Plan paths admit the public environment template, as source inputs do.
+        path = source_path(checkout, name)
+        if path.exists() and not path.is_file():
+            raise ValueError(f"{name}: expected a regular file")
+        raw = path.read_bytes() if path.exists() else None
         paths[name] = PathFacts(
             present=raw is not None,
             changed=raw != baseline(base, name),
-            executable=raw is not None
-            and bool((checkout / name).stat().st_mode & 0o111),
+            executable=raw is not None and bool(path.stat().st_mode & 0o111),
             base_executable=base.get(name, ("",))[0] == "100755",
         )
     return RequirementFacts(

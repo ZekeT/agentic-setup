@@ -292,7 +292,7 @@
       "ownership": {
         "mode": "file"
       },
-      "upstream": "803909a2c54c9f4728d8494cc7edf59e42c8ddd29449b1da5fa075b6bb288d9a"
+      "upstream": "021aa89c2367a0760c7925212dcdde49649021cb1b0e0ca31d1682741e4529a3"
     },
     ".engineering/engineering/verification_git.py": {
       "ownership": {
@@ -310,7 +310,7 @@
       "ownership": {
         "mode": "file"
       },
-      "upstream": "de692bb1ece64bd49bac6c46309790a9bf489eb48fe5d33254c2658c4b14eef0"
+      "upstream": "2cb3d6bf95711d607e15feb59a1aeac4f9675f00eccc5440f6b7119eeced2e46"
     },
     ".engineering/engineering/verification_semantic.py": {
       "ownership": {

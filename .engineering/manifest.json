@@ -682,12 +682,12 @@
     },
     ".engineering/engineering/verification_facts.py": {
       "executable": false,
-      "owned_sha256": "803909a2c54c9f4728d8494cc7edf59e42c8ddd29449b1da5fa075b6bb288d9a",
+      "owned_sha256": "021aa89c2367a0760c7925212dcdde49649021cb1b0e0ca31d1682741e4529a3",
       "ownership": {
         "mode": "file"
       },
       "previous": [],
-      "sha256": "803909a2c54c9f4728d8494cc7edf59e42c8ddd29449b1da5fa075b6bb288d9a"
+      "sha256": "021aa89c2367a0760c7925212dcdde49649021cb1b0e0ca31d1682741e4529a3"
     },
     ".engineering/engineering/verification_git.py": {
       "executable": false,
@@ -716,7 +716,7 @@
     },
     ".engineering/engineering/verification_requirements.py": {
       "executable": false,
-      "owned_sha256": "de692bb1ece64bd49bac6c46309790a9bf489eb48fe5d33254c2658c4b14eef0",
+      "owned_sha256": "2cb3d6bf95711d607e15feb59a1aeac4f9675f00eccc5440f6b7119eeced2e46",
       "ownership": {
         "mode": "file"
       },
@@ -733,7 +733,7 @@
         "3253267e64b736bc6e4b3d9fd0ab46b81c51b30a63518d928c95e5101c489fd4",
         "8466b0936af07a8a031c431601e03362910e10741ecb61fafb5710adaab9b013"
       ],
-      "sha256": "de692bb1ece64bd49bac6c46309790a9bf489eb48fe5d33254c2658c4b14eef0"
+      "sha256": "2cb3d6bf95711d607e15feb59a1aeac4f9675f00eccc5440f6b7119eeced2e46"
     },
     ".engineering/engineering/verification_semantic.py": {
       "executable": false,
