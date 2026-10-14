@@ -22,3 +22,5 @@ Cause, confirmed locally with a trace: `git fetch` launches `git maintenance run
 The 2026-10-10 CI failure was the same race inside the tests' own fixture repositories, fixed then by quieting maintenance in fixtures only. Production fetches still raced.
 
 Implemented 2026-10-14: the isolated verification Git environment now injects `maintenance.auto=false` and `gc.auto=0` through `GIT_CONFIG_COUNT`, which covers source fetches and every other verification Git command. A new starter-update integration test traces every Git child process during `verify prepare` and failed before the fix (two detached `git maintenance run --auto` starts); it passes after. The starter-update module passes (30 tests).
+
+Correction 2026-10-14: the first authoritative run failed (79 failed, 84 errors) because the changed managed module's distribution fingerprints were not regenerated, so template builds and adoption rejected it with "template distribution hash mismatch". Regenerated with the manifest generator; the previous upstream hash is retained as `previous`, so installations on the current release update cleanly.
