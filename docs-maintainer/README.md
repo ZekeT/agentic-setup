@@ -27,6 +27,12 @@ documents into the payload. Remote template branch/repository publication remain
 deferred; the supported release artifact is a generated directory. Pushes, PRs
 and merges remain separate authorized actions.
 
+## Testing the harness
+
+Harness tests follow the maintainer-only
+[engineering test standard](engineering-testing-standard.md): pure decisions are
+unit tested at their seam, and CLI-level tests cover real-boundary contracts.
+
 ## Onboarding verification
 
 [Onboarding evidence](onboarding-evidence.md) records the four onboarding routes,

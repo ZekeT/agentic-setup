@@ -4,7 +4,7 @@
 
 **Blocked by:** [01: Use native review evidence through publication](01-native-review-evidence.md).
 
-**Status:** file-type classification (user decision 2026-10-14) implemented on `feat/prose-assurance`; fresh independent verification pending
+**Status:** merged
 
 **Specification:** [Engineering v3-1d](../../engineering-v3-1d/spec.md)
 
@@ -70,3 +70,4 @@ Implemented on `feat/prose-assurance`. The checked criteria describe implemented
   - The guide and verifier state that changed examples get only the documentation review, which must confirm they are correct.
 - Fourth review (snapshot `d8f16917…`): all four checks passed (591 tests; 13/13 evals). Standards PASS, Spec PASS, Security PASS, Behavioral CONCERNS: the guide's tier rule still said "changed content is prose-only". The remaining items were non-blocking: slow anchor recomputation in `docs-check`, a pathspec-magic edge in the base-mode lookup, no test pinning `markdown.py` as sensitive, and naming nits. These reports remain history.
 - User authorized fixing all of them on 2026-10-14. The guide wording is fixed and notes the 1000-character skip. `docs-check` caches anchors per file (800 headings: 3.6 s → 0.04 s). The base-mode lookup uses `:(literal)`. A test pins `markdown.py` as sensitive. Functions are renamed to `floor_non_prose_documentation` and `lines_outside_fences`.
+- 2026-10-14: PR [#50](https://github.com/ZekeT/agentic-starter/pull/50) observed merged into `main` as `6a5b40c` (local time 20:19 +0800; GitHub `mergedAt` 2026-10-14T12:19:41Z).
