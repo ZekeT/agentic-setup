@@ -7,6 +7,7 @@ from typing import Any
 
 from .config import object_value
 from .installation import MANIFEST_PATH, ROLES, STATE_PATH, installation_role
+from .markdown import SUFFIXES
 from .ownership import METADATA, json_object, read_bytes, validate_ownership
 from .settings import (
     CONFIGURATION,
@@ -28,6 +29,9 @@ PROJECT = ["make", "check"]
 HEALTH = ["make", "engineering-check"]
 SUITES = [["make", "engineering-test"], ["make", "engineering-evals"]]
 GRAFT = [".engineering/bin/graft", "check"]
+# Prose-only plans run this on their paths instead of the application suite;
+# "--" keeps a path such as "-h.md" from being parsed as an option.
+DOCS = ["./engineering", "docs-check", "--"]
 
 # Review tiers in increasing order, with the reviewer roles each requires.
 TIERS = ("documentation", "ordinary", "sensitive")
@@ -79,7 +83,8 @@ MAINTAINER_SENSITIVE = {
     ),
     "migration module": (f"{MODULES}migrate/**", ".engineering/migrations/**"),
     "publication module": (f"{MODULES}publication*.py",),
-    "verification module": (f"{MODULES}verification*.py",),
+    # docs-check implements the required documentation check.
+    "verification module": (f"{MODULES}verification*.py", f"{MODULES}markdown.py"),
 }
 # Agent-policy files are never documentation: they change how agents behave.
 AGENT_POLICY = (
@@ -143,7 +148,14 @@ def requirements(
             "declare starter_source with the repository and pinned commit in the "
             "verification plan. Proposed manifest digests cannot vouch for bytes."
         )
-    required = [PROJECT]
+    paths = tier_paths(role, plan["paths"], base_and_proposed_settings(checkout))
+    floor_non_prose_documentation(checkout, paths)
+    prose = (
+        len(paths["documentation"]) == len(plan["paths"])
+        and categories["project"] == sorted(plan["paths"])
+        and starter_source is None
+    )
+    required = [[*DOCS, *sorted(plan["paths"])]] if prose else [PROJECT]
     if (
         categories["project configuration"]
         or categories["managed integration"]
@@ -165,12 +177,13 @@ def requirements(
             for category, names in categories.items()
             if names
         ]
+        if prose:
+            reasons.append("prose-only documentation needs documentation checks")
         if graft:
             reasons.append("configured application roots require Graft check")
         raise ValueError(
             f"Required checks missing: {missing} (role {role}; {'; '.join(reasons)})"
         )
-    paths = tier_paths(role, plan["paths"], base_and_proposed_settings(checkout))
     if starter_source is not None:
         # The source is an explicit trust decision, including which repository
         # may vouch for executable code. Always obtain independent security review.
@@ -191,6 +204,33 @@ def requirements(
         "checks": required,
         "roles": REVIEWERS[plan["tier"]],
     }
+
+
+def floor_non_prose_documentation(
+    checkout: Path, paths: dict[str, dict[str, str]]
+) -> None:
+    """Floor documentation paths at ordinary unless they are prose files.
+
+    Prose is decided by file type, not content (user decision 2026-10-14): a
+    configured, present, non-executable Markdown file qualifies.
+    """
+    for name in list(paths["documentation"]):
+        if reason := prose_reason(checkout, name):
+            del paths["documentation"][name]
+            paths["ordinary"][name] = reason
+
+
+def prose_reason(checkout: Path, name: str) -> str | None:
+    """Why a documentation path is not a prose file; None when it is."""
+    if not name.endswith(SUFFIXES):
+        return "unsupported documentation format"
+    if read_bytes(checkout, name) is None:
+        return "deleted document"
+    # A literal pathspec, so a name such as ":(top)x.md" is not pathspec magic.
+    listed = git(checkout, "ls-tree", "HEAD", "--", f":(literal){name}")
+    if (checkout / name).stat().st_mode & 0o111 or listed.startswith(b"100755"):
+        return "executable file"
+    return None
 
 
 def tier_paths(

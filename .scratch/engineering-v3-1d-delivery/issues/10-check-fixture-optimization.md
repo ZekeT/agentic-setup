@@ -4,7 +4,7 @@
 
 **Blocked by:** None (can start immediately).
 
-**Status:** published as PR #49; CI failed; fix committed locally, re-verification and push pending; not merged
+**Status:** merged
 
 **Specification:** [Engineering v3-1d](../../engineering-v3-1d/spec.md)
 
@@ -31,3 +31,5 @@ Implemented on `feat/check-fixture-optimization`. The checked criteria describe 
 - Fresh full checks and independent reviews for the corrected scope are pending in the local verification record.
 - 2026-10-10: final evidence on snapshot `887ec054…` PASS (all four checks: 566 tests, 13/13 evals; Standards, Spec, Behavioral, Security PASS). Human accepted the presented scope via /ship; published as PR #49 (not merged). Merge remains a separate human decision.
 - 2026-10-10: CI on PR #49 failed `test_invalid_committed_source_distribution_is_rejected` (Git 2.55 on the runner). Cause: background loose-object maintenance after the test's commit raced the dumb-HTTP fixture server; the old per-test setup was slow enough to hide it. Reproduced locally by enabling the same maintenance task under Git 2.50 (fails before, passes after). Fix: disable automatic gc and maintenance in the update fixture repositories. Re-verification and renewed publication authorization are required before pushing.
+- 2026-10-11: fix verified on snapshot `e8b420db…` PASS (all four checks: 566 tests, 13/13 evals; Standards, Spec, Behavioral, Security PASS; Behavioral reproduced the race 3/3 before the fix and 0/3 after). The human had closed PR #49 before the push; after /ship pushed the fix (no force-push), the human chose to reopen PR #49 at head `3605731`. CI passed on `3605731` (Git 2.55 runner: 566 tests, 13/13 evals). Not merged.
+- 2026-10-11: PR #49 observed merged into `main` as `ea25766` (local time 01:28 +0800; GitHub `mergedAt` 2026-10-10T17:28:15Z).

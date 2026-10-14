@@ -16,7 +16,7 @@
       "ownership": {
         "mode": "file"
       },
-      "upstream": "9f937709f5b569c0f8bcb9d8878e88a9b6384898e82b9bddd26ee24ab4ebab08"
+      "upstream": "3e61ce30de857c394f76f1e317fe13bca2dfbad6d89c6770153a685a435134dc"
     },
     ".claude/commands/review.md": {
       "ownership": {
@@ -106,7 +106,7 @@
       "ownership": {
         "mode": "file"
       },
-      "upstream": "f3494d1ee17549b9f6ec6e49e6674a5b33beb1792af4e538e0440c28f79f8f3c"
+      "upstream": "3cd28bff74c42a30e99ce14a23e167154a1f40915c196576144fa52f8f86063d"
     },
     ".engineering/engineering/__init__.py": {
       "ownership": {
@@ -136,7 +136,7 @@
       "ownership": {
         "mode": "file"
       },
-      "upstream": "cb7d2384b757d49d8975e1c7d353010b2c63df6248303dacf8ba7bcd9c4fd8f1"
+      "upstream": "154feaa4b02d27814f4f7720cc0aeccc1db421690c72bfbfd4ee53357d7d4e3b"
     },
     ".engineering/engineering/config.py": {
       "ownership": {
@@ -197,6 +197,12 @@
         "mode": "file"
       },
       "upstream": "009631470ff74f53bd3172a294e007297128d99db7a55def6ad8fdb22ee011eb"
+    },
+    ".engineering/engineering/markdown.py": {
+      "ownership": {
+        "mode": "file"
+      },
+      "upstream": "f71bfd1f45f226176998ed0bf303461f216c334cb9aa55e6cfcd2dea76ba029f"
     },
     ".engineering/engineering/ownership.py": {
       "ownership": {
@@ -298,7 +304,7 @@
       "ownership": {
         "mode": "file"
       },
-      "upstream": "d973f8bc41fb6a711eca398f97e85d9eb9195566e24f9cbb3ef435abc3cf8335"
+      "upstream": "3253267e64b736bc6e4b3d9fd0ab46b81c51b30a63518d928c95e5101c489fd4"
     },
     ".engineering/engineering/verification_semantic.py": {
       "ownership": {
@@ -373,7 +379,7 @@
       "ownership": {
         "mode": "file"
       },
-      "upstream": "b710737da208aaca0be7576c2304c29ee1481342e7567e05afc782f3eb875e35"
+      "upstream": "29781e9ff9eef7b3f8c295f822d6f09811dd0cdf6ffd038322b43faa4954a1dc"
     },
     "Makefile": {
       "ownership": {

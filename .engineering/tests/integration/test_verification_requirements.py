@@ -200,8 +200,8 @@ def test_consumer_hook_settings_are_configuration(project):
 
 @consumers
 def test_consumer_application_change_needs_only_project_checks(project):
-    edit(project, "README.md")
-    assert prepare(project, ["README.md"], [CHECK])["status"] == "INCOMPLETE"
+    edit(project, "notes.txt", "application note\n")
+    assert prepare(project, ["notes.txt"], [CHECK])["status"] == "INCOMPLETE"
 
 
 @consumers
