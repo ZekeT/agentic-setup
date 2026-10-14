@@ -87,6 +87,10 @@ def main(argv: list[str] | None = None) -> int:
     growth.add_argument(
         "--all", action="store_true", help="Inspect sizes without growth history"
     )
+    docs = sub.add_parser(
+        "docs-check", help="Check UTF-8 and local links in changed Markdown"
+    )
+    docs.add_argument("paths", nargs="+", help="Repository-relative Markdown files")
     from .verification import add_parser
 
     add_parser(sub)
@@ -205,6 +209,10 @@ def main(argv: list[str] | None = None) -> int:
             return doctor.run(root)
         if args.command == "navigation":
             return graft.run(root, args.arguments)
+        if args.command == "docs-check":
+            from . import markdown
+
+            return markdown.run(root, args.paths)
         config = load_config(root)
         if not config.enabled:
             print("⚠ maintainability: explicitly disabled by project configuration")

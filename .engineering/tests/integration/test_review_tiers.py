@@ -7,6 +7,7 @@ import sys
 import tomllib
 
 import pytest
+from engineering.verification_requirements import DOCS
 
 from .test_verification import (
     TOOLING,
@@ -118,29 +119,15 @@ def prepare_edits(repo, names, tier="sensitive"):
     for name in names:
         (repo / name).parent.mkdir(parents=True, exist_ok=True)
         (repo / name).write_text("changed\n")
-    change_plan(repo, paths=names, tier=tier)
+    # Prose edits route to documentation checks; others to the project suite.
+    checks = [["make", "check"], [*DOCS, *sorted(names)]]
+    change_plan(repo, paths=names, tier=tier, checks=checks)
     return prepare(repo, status=0 if tier == "sensitive" else 1)
 
 
 def recorded_paths(repo):
     record = repo / ".engineering/state/verification/example.json"
     return json.loads(record.read_text())["requirements"]["paths"]
-
-
-def test_documentation_only_change_passes_with_one_behavioral_report(repo):
-    commit_base_settings(repo, settings_text(["README.md", "docs/**"]))
-    (repo / "app.txt").write_text("before\n")
-    (repo / "docs").mkdir()
-    (repo / "docs/guide.md").write_text("Run make check.\n")
-    change_plan(repo, paths=["docs/guide.md"], tier="documentation")
-    result = prepare(repo)
-    assert result["floor"] == "documentation"
-    assert result["required_roles"] == ["behavioral"]
-    token = result["snapshot"]
-    cli(repo, "check", "--change", "example", "--snapshot", token)
-    report(repo, token, "behavioral")
-    result = cli(repo, "status", "--change", "example")
-    assert result["status"] == "PASS" and result["missing_roles"] == []
 
 
 @pytest.mark.parametrize(
@@ -354,7 +341,8 @@ def test_generated_and_adopted_projects_share_review_defaults(pristine):
 @consumers
 def test_consumer_readme_is_documentation_by_default(project):
     edit(project, "README.md")
-    result = prepare_paths(project, ["README.md"], [CHECK], tier="documentation")
+    checks = [[*DOCS, "README.md"]]
+    result = prepare_paths(project, ["README.md"], checks, tier="documentation")
     assert result["floor"] == "documentation"
     assert result["required_roles"] == ["behavioral"]
 
@@ -386,6 +374,7 @@ def test_required_checks_are_unchanged_by_tier(project):
     "name,rule",
     [
         (".engineering/engineering/verification.py", "verification module"),
+        (".engineering/engineering/markdown.py", "verification module"),
         (".engineering/engineering/publication_git.py", "publication module"),
         (".engineering/engineering/deps.py", "dependency module"),
         (".engineering/engineering/graft.py", "dependency module"),

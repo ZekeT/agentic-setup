@@ -42,6 +42,7 @@
     ".engineering/engineering/growth.py": ".engineering/engineering/growth.py",
     ".engineering/engineering/inspection.py": ".engineering/engineering/inspection.py",
     ".engineering/engineering/installation.py": ".engineering/engineering/installation.py",
+    ".engineering/engineering/markdown.py": ".engineering/engineering/markdown.py",
     ".engineering/engineering/ownership.py": ".engineering/engineering/ownership.py",
     ".engineering/engineering/publication.py": ".engineering/engineering/publication.py",
     ".engineering/engineering/publication_git.py": ".engineering/engineering/publication_git.py",

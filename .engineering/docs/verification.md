@@ -66,6 +66,10 @@ cannot lower them), never which Make targets exist:
 | Managed implementation matching a pinned starter update source | consumer | `make engineering-check`; sensitive review |
 | Any other path | both | nothing further |
 
+A plan whose every path is prose-only project documentation (see
+[Prose-only documentation](#prose-only-documentation)) requires
+`./engineering docs-check --` with its sorted paths instead of `make check`.
+
 When a plan records both `make check` and `make engineering-check`, `verify
 check` tells the starter's check script that doctor and maintainability are
 recorded separately, so `make check` does not repeat them. PASS still requires
@@ -232,13 +236,15 @@ Starter-owned rules always apply:
   (`Makefile`, `GNUmakefile`, `makefile`, `*.mk`), `.engineering/scripts/**`
   and Engineering launchers. In the maintainer checkout also the dependency
   (including Graft), skill-installation, apply, transaction, update, migration,
-  publication and verification modules.
+  publication and verification modules (including the `docs-check` module).
 - `ordinary`: agent policy is never documentation: `CLAUDE.md`, `AGENTS.md`,
   `.claude/**` including skills, `REVIEW.md`, `ENGINEERING.md`, Engineering docs
   and agent docs. Changes to `.engineering/config.toml`, which holds the review
   settings, are at least `ordinary`.
 - `documentation`: a path the project's review settings list as documentation
-  that no rule above catches. Every other path is `ordinary`.
+  that no rule above catches, when it is a prose-only file (present,
+  non-executable Markdown; see Prose-only documentation). Every other path is
+  `ordinary`.
 
 Review settings live in project configuration:
 
@@ -257,9 +263,36 @@ can never reduce them. The floor evaluates both the base and the proposed
 settings and keeps the stricter result for each path, so a change cannot lower
 its own review. Invalid settings fail planning.
 
-A documentation reviewer checks the changed prose against the code, tests and
-recorded decisions (domain context and ADRs), and reports claims the code
-contradicts; `make check` still gates formatting, links and size.
+### Prose-only documentation
+
+Prose is decided by file type, not content: a path the review settings list as
+documentation is prose-only when it is a present, non-executable Markdown file
+(`.md`, `.markdown`). Anything else in a configured location floors at
+`ordinary` with a recorded reason: `unsupported documentation format`,
+`deleted document` or `executable file`. Content is not inspected, so changed
+examples, inline code, HTML and task items in configured documentation are all
+prose; the documentation reviewer reads every changed line. Keep requirements
+and acceptance criteria out of configured documentation locations when they
+need full review. Agent policy, review settings and sensitive paths never
+qualify.
+
+When every planned path is prose-only project documentation, the plan needs
+`./engineering docs-check -- <paths>` (paths sorted; `--` keeps a path such as
+`-h.md` from being read as an option) instead of `make check`; a
+configured Graft check still applies. A mixed, managed or pinned-source plan
+keeps the full applicable suite. `docs-check` reads each file as UTF-8 and
+reports local link targets and heading anchors (ATX, setext and blockquoted
+headings, GitHub-style slugs) that do not resolve; external URLs are not fetched
+and `?query` suffixes are ignored. Lines over 1000 characters are skipped. It
+checks only the planned files: a heading
+rename can break anchors in other documents, which the documentation reviewer
+must look for. It runs without the application environment, so add project
+checks to the plan when prose needs more. One fresh documentation
+review, recorded as the behavioral role, checks the changed claims against the
+code, tests and recorded decisions (domain context and ADRs) and reports
+contradictions. Configuration edits that would widen documentation are
+`ordinary` themselves and the floor uses the stricter of base and proposed
+settings, so they cannot lower their own route.
 
 Native Standards and Spec are distinct semantic reports from the unchanged
 upstream /code-review skill. Each role uses a separate fresh session. Shared

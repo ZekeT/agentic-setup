@@ -337,7 +337,9 @@ Use [REVIEW.md](REVIEW.md) for human review. The review tier decides reviewer
 roles; the tool's floor makes dependency, hook, settings, workflow, build-recipe
 and launcher changes sensitive, and agent policy and review settings at least
 ordinary. Paths listed under `[review] documentation` in
-`.engineering/config.toml` may use the documentation tier. Declare sensitive for
+`.engineering/config.toml` may use the documentation tier when they are
+non-executable Markdown files; such plans run `./engineering docs-check` instead
+of the application suite (see the verification guide). Declare sensitive for
 auth, secrets, cryptography, untrusted input, payments, privilege boundaries,
 destructive operations, sensitive storage, network exposure and dependency
 execution. Each role uses a separate fresh session.

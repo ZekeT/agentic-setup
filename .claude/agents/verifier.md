@@ -31,6 +31,9 @@ and gaps. Standards and Spec are native semantic axes, separate from this role.
 Never combine roles for a sensitive tier or an ordinary tier.
 For a documentation tier, check each changed claim against the code, tests and
 recorded decisions (domain context, ADRs); a contradiction is a FAIL finding.
+Recorded `docs-check` covers links and anchors in the planned files only, not
+the application suite; check other documents' links to renamed headings.
+Changed commands and examples get no other check: confirm they are correct.
 If inputs change, do not relabel old findings with a new token: reverify. Local
 evidence output is allowed, application edits are not. Never substitute implementer
 self-review for independent evidence.

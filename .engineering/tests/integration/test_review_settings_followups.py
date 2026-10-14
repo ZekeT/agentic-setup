@@ -1,6 +1,7 @@
 """Review settings reject typos and keep executable configuration out of prose."""
 
 import pytest
+from engineering.verification_requirements import DOCS
 
 from .test_review_tiers import CONFIG, commit_base_settings, settings_text
 from .test_verification import change_plan, prepare
@@ -43,5 +44,6 @@ def test_markdown_default_includes_root_and_nested_prose_only(repo, name, tier):
     path = repo / name
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text("content\n")
-    change_plan(repo, paths=[name], tier=tier)
+    check = [*DOCS, name] if tier == "documentation" else ["make", "check"]
+    change_plan(repo, paths=[name], tier=tier, checks=[check])
     assert prepare(repo)["floor"] == tier
