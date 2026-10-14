@@ -6,7 +6,7 @@
 
 **Status:** ready-for-agent
 
-**Review tier:** documentation (unless it touches agent-policy files)
+**Review tier:** ordinary at least (this ticket's tracking edits under `.scratch/`, and any standards file outside the configured documentation paths, floor at ordinary)
 
 - [ ] ADR 0004 records the measured root cause (Git subprocess count: 47 calls per `verify status`, about 9 s per typical verification test; rules interleaved with I/O)
 - [ ] ADR 0004 records the decision: Git batching first, then a facts value plus pure decisions per module family, with the unit tier and subprocess guard

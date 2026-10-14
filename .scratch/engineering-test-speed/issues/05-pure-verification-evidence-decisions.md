@@ -16,6 +16,7 @@
 - [ ] Outcome and completeness (PASS, FAIL, INCOMPLETE, missing roles, shared reviewers, handoff text) are unit tested for every status
 - [ ] The behavioral-PASS precondition (successful recorded authoritative checks that match the plan) is a pure decision, unit tested
 - [ ] Decision functions read no files, start no processes and touch no clock or environment
+- [ ] Unit tests assert observable decisions (the returned result, or the validation error and its message) for a given facts value; they do not assert which helper ran, how many Git calls happened, or private intermediate structures
 - [ ] Each migrated CLI-level scenario from the verification, carried-evidence and native-evidence integration tests is removed only after an equivalent failing-when-broken unit test exists; each removal is noted in this ticket
 - [ ] End-to-end tests remain for non-mutation of the user's working tree and index, hooks, retries and lock serialization, plus a small set proving gathered facts reach decisions and decisions drive writes
 - [ ] Remaining end-to-end tests that need prepared repositories reuse the immutable shared preparation pattern (shared build, fresh writable copy, write guard) where safe

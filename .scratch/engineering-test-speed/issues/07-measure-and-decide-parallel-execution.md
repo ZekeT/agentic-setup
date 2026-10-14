@@ -6,7 +6,7 @@
 
 **Status:** ready-for-agent (needs a human decision at the end)
 
-**Review tier:** documentation
+**Review tier:** ordinary (results are recorded in this `.scratch/` ticket, which floors at ordinary)
 
 - [ ] Local timings for the unit tier and the full engineering test target are recorded in this ticket, with machine load noted
 - [ ] The slowest remaining tests are listed with their durations from a local profile (profiling is local investigation, not shipped tooling)

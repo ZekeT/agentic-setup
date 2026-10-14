@@ -17,8 +17,11 @@
 - [ ] Required checks and missing-check rejection derive purely from role, ownership and classified paths, unit tested
 - [ ] Tier-below-floor rejection and plan-shape validation (separated from filesystem path checks where possible) are unit tested, including each rejection message
 - [ ] Unit tests cover boundaries: empty, one and many paths; mixed prose and non-prose; base versus proposed role; settings that add floors
+- [ ] Decision functions read no files, start no processes and touch no clock or environment
+- [ ] Unit tests assert observable decisions (the returned result, or the validation error and its message) for a given facts value; they do not assert which helper ran, how many Git calls happened, or private intermediate structures
 - [ ] Unit-tier builders live in the unit tier's own conftest and never read the real repository
 - [ ] Each CLI-level scenario from the verification-requirements, review-tier and prose-assurance integration tests that only exercised a pure rule is removed only after an equivalent unit test exists that fails when the rule breaks; each removal is noted in this ticket
 - [ ] At least one end-to-end test per migrated rule group still shows the shell wires the gathered facts into the decision
+- [ ] Remaining end-to-end tests that need prepared repositories reuse the immutable shared preparation pattern (shared build, fresh writable copy, write guard) where safe
 - [ ] Verification record schema, snapshot identity, CLI surface and review-tier policy are unchanged
 - [ ] Local unit-tier and full-suite timings are recorded in this ticket

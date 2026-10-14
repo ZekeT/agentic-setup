@@ -6,7 +6,7 @@ Source: [issue 01](issues/01-faster-engineering-test-feedback.md) (triaged 2026-
 
 ## Problem Statement
 
-People developing the starter (in the maintainer checkout) run the engineering test suite on nearly every harness change, and it also runs inside every `verify check`. The suite now takes 20–30 minutes and has exceeded the 1800-second `verify check` command timeout. When that happens, verification is blocked entirely. Even when it does not, routine development has no fast feedback loop: waiting for a run takes longer than writing the change.
+People developing the starter (in the maintainer checkout) run the engineering test suite on nearly every harness change, and it also runs inside every `verify check` of a harness change. The suite now takes 20–30 minutes and has exceeded the 1800-second `verify check` command timeout. When that happens, verification is blocked entirely. Even when it does not, routine development has no fast feedback loop: waiting for a run takes longer than writing the change.
 
 The slowness has two causes, both measured:
 
@@ -73,14 +73,14 @@ Target: unit tests finish in seconds during development, and the full authoritat
 
 **Sequencing.** Tickets run in this order:
 
-1. ADR and maintainer testing standard. This is documentation-tier and can land first, independently of PR #50.
+1. ADR and maintainer testing standard. This can land first, independently of PR #50.
 2. Git batching in the verification modules.
 3. Unit tier and subprocess guard.
 4. Verification family: facts value and pure decisions, with scenarios migrated.
 5. Publication family: the same.
 6. Measure, then decide on parallel execution.
 
-Ticket 3 may combine with 4 if the guard alone is too small to review on its own. Code tickets begin after PR #50 merges, on a fresh branch from updated `main`. Tickets that touch the same modules are serialized.
+Ticket 3 may combine with 4 if the guard alone is too small to review on its own. Code tickets begin after PR #50 merges, on a fresh branch from updated `main` (condition met: PR #50 merged on 2026-10-14). Tickets that touch the same modules are serialized.
 
 **Git batching (verification modules).**
 - Replace per-question Git subprocesses with batched plumbing: one recursive tree listing per baseline, `cat-file --batch` (or `--batch-check`) for object content and existence, and one listing for tracked, untracked and unmerged state where the current code makes several calls.
@@ -106,7 +106,7 @@ Ticket 3 may combine with 4 if the guard alone is too small to review on its own
 - A short maintainer-only testing standard goes in a non-distributed location that Standards review picks up as a standards source, linked from the ADR. It says: put pure decision logic behind the family's decision seam and unit test it there; keep CLI-level tests for real-boundary contracts; a new CLI-level test that only exercises a pure rule is a standards violation.
 - The distributed coding standards, testing guide, ENGINEERING.md and the template manifest are not changed. No feature-local instruction file is added unless the standard proves insufficient.
 
-**Review tiers.** Git batching and the facts refactor touch verification and publication modules, which are maintainer-sensitive paths, so those tickets take the sensitive tier. Adding a parallel-runner dependency would also be sensitive. The ADR and standard ticket is documentation-tier unless it touches agent-policy files.
+**Review tiers.** Git batching and the facts refactor touch verification and publication modules, which are maintainer-sensitive paths, so those tickets take the sensitive tier. Adding a parallel-runner dependency would also be sensitive. The ADR and standard ticket is at least ordinary: only Markdown under the configured documentation paths qualifies for the documentation tier, and the ticket's own tracking edits under `.scratch/` floor at ordinary. The measurement ticket is ordinary for the same reason.
 
 ## Testing Decisions
 
@@ -117,7 +117,7 @@ Ticket 3 may combine with 4 if the guard alone is too small to review on its own
 - **Migration discipline:** a CLI-level scenario is removed only when an equivalent unit test exists and fails if the rule is broken. Each removal is noted in the ticket, so coverage is moved, not dropped.
 - **Guard:** the subprocess guard has its own test showing that a unit test which starts a subprocess fails, with the expected message.
 - **Prior art:** the immutable shared preparation and write guard in the engineering test support (shared build, fresh writable copy, teardown comparison); the existing verification, review-tier, verification-requirements and prose-assurance integration tests, which list the scenarios to migrate; and the distributed testing guide's rule that a unit test never touches the filesystem or subprocesses.
-- **Authoritative run:** `verify check` still runs the full engineering test target, which includes the unit tier, the remaining integration and end-to-end tests, lint and types.
+- **Authoritative run:** for a harness change, `verify check` still runs the full engineering test target, which includes the unit tier, the remaining integration and end-to-end tests, lint and types.
 
 ## Out of Scope
 
@@ -133,6 +133,6 @@ Ticket 3 may combine with 4 if the guard alone is too small to review on its own
 ## Further Notes
 
 - The measurements behind this spec are in the source issue's triage outcome: 9 s per typical verification test, 47 Git calls per `verify status`, and about 20 minutes (quiet machine) to 31 minutes (loaded machine) for 566 serial tests.
-- PR #50 (ticket 02 of `engineering-v3-1d-delivery`) changes verification requirements and tests. All code tickets here wait for it to merge.
+- PR #50 (ticket 02 of `engineering-v3-1d-delivery`) changes verification requirements and tests. All code tickets here wait for it to merge. It merged on 2026-10-14 (`6a5b40c`), so this condition is met.
 - When a long full run is unavoidable before this lands, check machine load first. The suite is near the timeout.
 - Ticket breakdown follows via `/to-tickets` into this directory's `issues/`, numbered after the existing source issue.

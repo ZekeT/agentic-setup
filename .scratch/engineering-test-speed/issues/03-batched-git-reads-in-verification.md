@@ -2,7 +2,7 @@
 
 **What to build:** `verify status`, `prepare`, `check` and `record` gather the Git data they need with batched plumbing calls instead of one subprocess per question, so real verification and the existing suite both get faster with no observable change. See the [spec](../spec.md), "Git batching (verification modules)".
 
-**Blocked by:** PR #50 merged (external). Start on a fresh branch from updated `main`.
+**Blocked by:** PR #50 merged (external; met on 2026-10-14). Start on a fresh branch from updated `main`.
 
 **Status:** ready-for-agent
 
