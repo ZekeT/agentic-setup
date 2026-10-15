@@ -1,23 +1,19 @@
-"""Derive required checks, tier floor and reviewer roles for a verification plan."""
+"""Decide required checks, tier floor and reviewer roles for a verification plan.
 
-import tomllib
+Decisions are pure functions of a gathered facts value (verification_facts) and
+the plan: they read no files, start no processes and touch no clock or environment.
+"""
+
+from collections.abc import Mapping
 from fnmatch import fnmatchcase
-from pathlib import Path, PurePosixPath
+from pathlib import PurePosixPath
 from typing import Any
 
-from .config import object_value
-from .installation import MANIFEST_PATH, ROLES, STATE_PATH, installation_role
+from .installation import MANIFEST_PATH
 from .markdown import SUFFIXES
-from .ownership import METADATA, json_object, read_bytes, validate_ownership
-from .settings import (
-    CONFIGURATION,
-    graft_navigation,
-    provider,
-    review_settings,
-    validate,
-)
-from .verification_git import Baseline
-from .verification_source import verify_update
+from .ownership import METADATA
+from .settings import CONFIGURATION
+from .verification_facts import PathFacts, RequirementFacts, Review
 
 # Starter tooling directories; some files are distributed, but everything here
 # is maintainer source in the maintainer checkout (never consumer policy).
@@ -98,51 +94,23 @@ AGENT_POLICY = (
 )
 
 
-def requirements(
-    checkout: Path,
-    base: Baseline,
-    plan: dict[str, Any],
-    starter_source: dict[str, Any] | None = None,
-) -> dict[str, Any]:
+def requirements(facts: RequirementFacts, plan: dict[str, Any]) -> dict[str, Any]:
     """Required checks, tier floor, per-path floor rules and reviewer roles.
 
     Rejects a plan that omits a required check or declares a tier below the
     floor. Checks come from recorded role and ownership, never from existing
-    targets; the tier changes reviewers, never checks. The checkout holds the
-    proposed content; base holds the comparison base's blobs.
+    targets; the tier changes reviewers, never checks.
     """
-    # The recorded role is trusted (ADR 0001); absence blocks planning. The
-    # stricter of base and proposed applies, so a role change counts once merged.
-    role = installation_role(checkout)
-    if baseline_role(base) == "maintainer":
-        role = "maintainer"
-    configured = (checkout / CONFIGURATION).is_file()
-    if configured:
-        # Invalid project configuration fails planning visibly, not only doctor.
-        try:
-            validate(checkout, (checkout / CONFIGURATION).read_text())
-        except tomllib.TOMLDecodeError as error:
-            raise ValueError(f"{CONFIGURATION}: {error}") from error
-    graft = configured and graft_navigation(checkout)
-    if (
-        GRAFT in plan["checks"]
-        and configured
-        and provider(checkout, "navigation") != "graft"
-    ):
+    # The stricter of base and proposed role applies, so a role change counts
+    # once merged (ADR 0001).
+    role = "maintainer" if facts.base_role == "maintainer" else facts.role
+    if GRAFT in plan["checks"] and facts.navigation not in (None, "graft"):
         raise ValueError(
             "navigation disabled: remove the Graft check from the plan, or "
             'select [navigation] provider = "graft"'
         )
-    categories = classify(checkout, base, role, plan["paths"])
-    if "starter_source" in plan:
-        if starter_source is None:
-            raise ValueError("Pinned starter source evidence is missing")
-        verify_update(
-            checkout,
-            starter_source,
-            manifest_files(baseline(base, MANIFEST_PATH)) or {},
-        )
-    if (edited := categories["managed implementation"]) and starter_source is None:
+    categories = classify(facts, role, plan["paths"])
+    if (edited := categories["managed implementation"]) and not facts.starter_source:
         raise ValueError(
             f"Managed implementation edited in a consumer project: {edited}. "
             "Engineering owns these files, so verification cannot pass. Restore "
@@ -152,43 +120,16 @@ def requirements(
             "declare starter_source with the repository and pinned commit in the "
             "verification plan. Proposed manifest digests cannot vouch for bytes."
         )
-    paths = tier_paths(role, plan["paths"], base_and_proposed_settings(checkout, base))
-    floor_non_prose_documentation(checkout, base, paths)
+    paths = tier_paths(role, plan["paths"], facts.review)
+    floor_non_prose_documentation(facts.paths, paths)
     prose = (
         len(paths["documentation"]) == len(plan["paths"])
         and categories["project"] == sorted(plan["paths"])
-        and starter_source is None
+        and not facts.starter_source
     )
-    required = [[*DOCS, *sorted(plan["paths"])]] if prose else [PROJECT]
-    if (
-        categories["project configuration"]
-        or categories["managed integration"]
-        or categories["installation metadata"]
-        or starter_source is not None
-    ):
-        required.append(HEALTH)
-    # In the maintainer checkout the metadata is the ownership contract every
-    # consumer receives, so it is maintainer source as well as metadata.
-    if categories["maintainer source"] or (
-        role == "maintainer" and categories["installation metadata"]
-    ):
-        required += SUITES
-    if graft:
-        required.append(GRAFT)
-    if missing := [command for command in required if command not in plan["checks"]]:
-        reasons = [
-            f"{category}: {', '.join(names)}"
-            for category, names in categories.items()
-            if names
-        ]
-        if prose:
-            reasons.append("prose-only documentation needs documentation checks")
-        if graft:
-            reasons.append("configured application roots require Graft check")
-        raise ValueError(
-            f"Required checks missing: {missing} (role {role}; {'; '.join(reasons)})"
-        )
-    if starter_source is not None:
+    required = required_checks(facts, role, categories, prose, plan["paths"])
+    reject_missing_checks(facts, role, categories, prose, required, plan["checks"])
+    if facts.starter_source:
         # The source is an explicit trust decision, including which repository
         # may vouch for executable code. Always obtain independent security review.
         for name in plan["paths"]:
@@ -196,12 +137,7 @@ def requirements(
                 paths[tier].pop(name, None)
             paths["sensitive"][name] = "pinned starter update source"
     floor = max((tier for tier in TIERS if paths[tier]), key=TIERS.index)
-    if TIERS.index(plan["tier"]) < TIERS.index(floor):
-        reasons = [f"{name} ({rule})" for name, rule in paths[floor].items()]
-        raise ValueError(
-            f"Declared tier {plan['tier']} is below the tier floor {floor}: "
-            f"{', '.join(reasons)}. Declare at least {floor}."
-        )
+    reject_below_floor(plan["tier"], floor, paths)
     return {
         "floor": floor,
         "paths": paths,
@@ -210,8 +146,71 @@ def requirements(
     }
 
 
+def required_checks(
+    facts: RequirementFacts,
+    role: str,
+    categories: dict[str, list[str]],
+    prose: bool,
+    names: list[str],
+) -> list[list[str]]:
+    """Checks a plan must declare, from role, ownership and classified paths."""
+    required = [[*DOCS, *sorted(names)]] if prose else [PROJECT]
+    if (
+        categories["project configuration"]
+        or categories["managed integration"]
+        or categories["installation metadata"]
+        or facts.starter_source
+    ):
+        required.append(HEALTH)
+    # In the maintainer checkout the metadata is the ownership contract every
+    # consumer receives, so it is maintainer source as well as metadata.
+    if categories["maintainer source"] or (
+        role == "maintainer" and categories["installation metadata"]
+    ):
+        required += SUITES
+    if facts.graft:
+        required.append(GRAFT)
+    return required
+
+
+def reject_missing_checks(
+    facts: RequirementFacts,
+    role: str,
+    categories: dict[str, list[str]],
+    prose: bool,
+    required: list[list[str]],
+    declared: list[list[str]],
+) -> None:
+    """Name each missing check with the categories that required it."""
+    if missing := [command for command in required if command not in declared]:
+        reasons = [
+            f"{category}: {', '.join(names)}"
+            for category, names in categories.items()
+            if names
+        ]
+        if prose:
+            reasons.append("prose-only documentation needs documentation checks")
+        if facts.graft:
+            reasons.append("configured application roots require Graft check")
+        raise ValueError(
+            f"Required checks missing: {missing} (role {role}; {'; '.join(reasons)})"
+        )
+
+
+def reject_below_floor(
+    declared: str, floor: str, paths: dict[str, dict[str, str]]
+) -> None:
+    """Name the paths and rules that set the floor a declared tier is below."""
+    if TIERS.index(declared) < TIERS.index(floor):
+        reasons = [f"{name} ({rule})" for name, rule in paths[floor].items()]
+        raise ValueError(
+            f"Declared tier {declared} is below the tier floor {floor}: "
+            f"{', '.join(reasons)}. Declare at least {floor}."
+        )
+
+
 def floor_non_prose_documentation(
-    checkout: Path, base: Baseline, paths: dict[str, dict[str, str]]
+    observed: Mapping[str, PathFacts], paths: dict[str, dict[str, str]]
 ) -> None:
     """Floor documentation paths at ordinary unless they are prose files.
 
@@ -219,24 +218,24 @@ def floor_non_prose_documentation(
     configured, present, non-executable Markdown file qualifies.
     """
     for name in list(paths["documentation"]):
-        if reason := prose_reason(checkout, base, name):
+        if reason := prose_reason(name, observed[name]):
             del paths["documentation"][name]
             paths["ordinary"][name] = reason
 
 
-def prose_reason(checkout: Path, base: Baseline, name: str) -> str | None:
+def prose_reason(name: str, path: PathFacts) -> str | None:
     """Why a documentation path is not a prose file; None when it is."""
     if not name.endswith(SUFFIXES):
         return "unsupported documentation format"
-    if read_bytes(checkout, name) is None:
+    if not path.present:
         return "deleted document"
-    if (checkout / name).stat().st_mode & 0o111 or base.get(name, ("",))[0] == "100755":
+    if path.executable or path.base_executable:
         return "executable file"
     return None
 
 
 def tier_paths(
-    role: str, paths: list[str], settings: list[dict[str, tuple[str, ...]]]
+    role: str, paths: list[str], settings: tuple[Review, ...]
 ) -> dict[str, dict[str, str]]:
     """Floor each path under every review settings version; the highest tier wins."""
     result: dict[str, dict[str, str]] = {tier: {} for tier in reversed(TIERS)}
@@ -249,9 +248,7 @@ def tier_paths(
     return result
 
 
-def path_floor(
-    role: str, name: str, review: dict[str, tuple[str, ...]]
-) -> tuple[str, str]:
+def path_floor(role: str, name: str, review: Review) -> tuple[str, str]:
     """The first matching rule; starter rules precede project settings."""
     sensitive = dict(STARTER_SENSITIVE)
     if role == "maintainer":
@@ -268,20 +265,6 @@ def path_floor(
     if matches(name, review["documentation"]):
         return "documentation", "project documentation setting"
     return "ordinary", "no documentation rule"
-
-
-def base_and_proposed_settings(
-    checkout: Path, base: Baseline
-) -> list[dict[str, tuple[str, ...]]]:
-    """Base and proposed review settings; a change cannot weaken its own floor.
-
-    Starter lists come from the running verifier. Consumer updates to those
-    lists require a pinned source and sensitive review (ADR 0002).
-    """
-    return [
-        review_settings(baseline(base, CONFIGURATION)),
-        review_settings(read_bytes(checkout, CONFIGURATION)),
-    ]
 
 
 def matches(name: str, patterns: tuple[str, ...]) -> bool:
@@ -307,17 +290,17 @@ def path_matches(name: str, pattern: str) -> bool:
 
 
 def classify(
-    checkout: Path, base: Baseline, role: str, paths: list[str]
+    facts: RequirementFacts, role: str, paths: list[str]
 ) -> dict[str, list[str]]:
     """Categorize each changed path by manifest ownership and installation role."""
-    proposed = manifest_files(read_bytes(checkout, MANIFEST_PATH))
+    proposed = facts.proposed_ownership
     if proposed is None:
         raise ValueError(
             f"{MANIFEST_PATH} is missing; ownership cannot be classified. "
             "Restore the installation manifest before verification."
         )
     # Baseline ownership keeps a dropped entry from lowering requirements.
-    owned = manifest_files(baseline(base, MANIFEST_PATH)) or {}
+    owned = facts.base_ownership
     categories: dict[str, list[str]] = {
         "project configuration": [],
         "managed integration": [],
@@ -328,15 +311,13 @@ def classify(
     }
     for name in sorted(paths):
         modes = {
-            entry["ownership"]["mode"]
-            for entry in (proposed.get(name), owned.get(name))
-            if entry is not None
+            mode for mode in (proposed.get(name), owned.get(name)) if mode is not None
         }
         if role == "maintainer" and (
             "file" in modes or name.startswith(MAINTAINER_TOOLING)
         ):
             category = "maintainer source"
-        elif "file" in modes and read_bytes(checkout, name) != baseline(base, name):
+        elif "file" in modes and facts.paths[name].changed:
             # Manifest digests are proposed content too, so they never vouch
             # for an edit or removal; a fetched starter source must vouch for it.
             category = "managed implementation"
@@ -351,28 +332,3 @@ def classify(
             category = "project"
         categories[category].append(name)
     return categories
-
-
-def baseline_role(base: Baseline) -> str | None:
-    """The comparison base's recorded role, or None before it was recorded."""
-    raw = baseline(base, STATE_PATH)
-    role = None if raw is None else json_object(raw).get("role")
-    return role if role in ROLES else None
-
-
-def baseline(base: Baseline, name: str) -> bytes | None:
-    """A path's bytes at the comparison base, None when absent."""
-    entry = base.get(name)
-    return None if entry is None else entry[1]
-
-
-def manifest_files(raw: bytes | None) -> dict[str, Any] | None:
-    """Validate the ownership of every manifest entry before trusting it."""
-    if raw is None:
-        return None
-    files = object_value(json_object(raw).get("files"), f"{MANIFEST_PATH}: files")
-    for name, entry in files.items():
-        if not isinstance(entry, dict):
-            raise ValueError(f"{MANIFEST_PATH}: invalid entry {name}")
-        validate_ownership(name, entry.get("ownership"))
-    return files

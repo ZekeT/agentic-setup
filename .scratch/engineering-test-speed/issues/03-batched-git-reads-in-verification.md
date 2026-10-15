@@ -4,7 +4,7 @@
 
 **Blocked by:** PR #50 merged (external; met on 2026-10-14). Start on a fresh branch from updated `main`.
 
-**Status:** implemented on `perf/batched-verification-git-reads`; independent verification pending (not accepted, published or merged)
+**Status:** merged (PR [#54](https://github.com/ZekeT/agentic-starter/pull/54), `210a983`)
 
 **Review tier:** sensitive (verification modules)
 
@@ -38,3 +38,4 @@
   | One `verify status` | 0.86 s | 0.54 s |
   | `test_reuse_across_sessions_and_content_preserving_commit` | 9.57 s | 5.99 s |
   | Full engineering pytest suite (593 tests) | 1274 s | 887 s |
+- 2026-10-15: published as PR [#54](https://github.com/ZekeT/agentic-starter/pull/54) and merged into `main` as `210a983` (GitHub `mergedAt` 2026-10-14T18:57:46Z).

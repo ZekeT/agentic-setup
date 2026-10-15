@@ -21,12 +21,9 @@ from .test_verification import (
 from .test_verification import repo as repo
 from .test_verification_requirements import (
     CHECK,
-    HEALTH,
     SUITES,
-    consumers,
     edit,
     maintainer_checkout,
-    set_threshold,
 )
 from .test_verification_requirements import prepare as prepare_paths
 from .test_verification_requirements import pristine as pristine
@@ -35,27 +32,13 @@ from .test_verification_requirements import project as project
 pytestmark = pytest.mark.integration
 
 
-@pytest.mark.parametrize(
-    "changes,message",
-    [
-        (
-            {"security_required": False, "security_reason": "Not sensitive"},
-            "replaced by tier and tier_reason",
-        ),
-        ({"tier": None}, "tier"),
-        ({"tier": "trivial"}, "documentation, ordinary, sensitive"),
-        ({"tier_reason": " "}, "tier_reason"),
-    ],
-)
-def test_plan_requires_a_review_tier_with_reason(repo, changes, message):
+def test_plan_requires_a_review_tier_with_reason(repo):
+    # Each plan-shape rejection is unit tested; this shows prepare applies them.
     path = repo / ".engineering/state/verification/plan.json"
-    plan = {**json.loads(path.read_text()), **changes}
-    if changes.get("tier", "") is None or "security_required" in changes:
-        plan.pop("tier")
-        plan.pop("tier_reason")
-    path.write_text(json.dumps(plan))
+    path.write_text(json.dumps({**json.loads(path.read_text()), "tier": "trivial"}))
     result = prepare(repo, status=1)
-    assert result["status"] == "INCOMPLETE" and message in result["error"]
+    assert result["status"] == "INCOMPLETE"
+    assert "documentation, ordinary, sensitive" in result["error"]
 
 
 def test_declared_tier_below_floor_names_paths_and_rules(repo):
@@ -83,13 +66,6 @@ def test_raised_tier_requires_its_roles_and_reports_them(repo):
     assert result["required_roles"] == ["standards", "spec", "behavioral", "security"]
     assert result["missing_roles"] == ["standards", "spec", "security"]
     assert result["shared_reviewers"] == {}
-
-
-def test_documentation_tier_needs_project_review_settings(repo):
-    # Without project configuration no path is documentation.
-    change_plan(repo, tier="documentation")
-    error = prepare(repo, status=1)["error"]
-    assert "below the tier floor ordinary" in error and "app.txt" in error
 
 
 CONFIG = ".engineering/config.toml"
@@ -130,40 +106,6 @@ def recorded_paths(repo):
     return json.loads(record.read_text())["requirements"]["paths"]
 
 
-@pytest.mark.parametrize(
-    "name,floor,rule",
-    [
-        ("README.md", "documentation", "project documentation setting"),
-        ("docs/context/product.md", "documentation", "project documentation setting"),
-        ("docs/adr/0003-choice.md", "documentation", "project documentation setting"),
-        ("docs/agents/domain.md", "ordinary", "agent policy"),
-        ("notes.md", "ordinary", "no documentation rule"),
-    ],
-)
-def test_documentation_settings_classify_domain_docs_not_agent_policy(
-    repo, name, floor, rule
-):
-    commit_base_settings(repo, settings_text(["README.md", "docs/**"]))
-    prepare_edits(repo, [name])
-    assert recorded_paths(repo)[floor] == {name: rule}
-
-
-def test_project_sensitive_additions_raise_the_floor(repo):
-    commit_base_settings(repo, settings_text(["docs/**"], ["src/auth/**"]))
-    error = prepare_edits(repo, ["src/auth/login.py"], tier="ordinary")["error"]
-    assert "below the tier floor sensitive" in error
-    assert "src/auth/login.py (project sensitive setting)" in error
-
-
-def test_project_settings_cannot_weaken_starter_rules(repo):
-    commit_base_settings(repo, settings_text(["**"]))
-    prepare_edits(repo, ["Makefile", "CLAUDE.md", "guide.md"])
-    paths = recorded_paths(repo)
-    assert paths["sensitive"] == {"Makefile": "build recipe"}
-    assert paths["ordinary"] == {"CLAUDE.md": "agent policy"}
-    assert paths["documentation"] == {"guide.md": "project documentation setting"}
-
-
 def test_editing_review_settings_uses_the_stricter_of_base_and_proposed(repo):
     commit_base_settings(repo, settings_text(["docs/**"], ["billing/**"]))
     names = ["docs/guide.md", "src/app.py", "billing/rates.py", "api/keys.py"]
@@ -186,43 +128,12 @@ def test_editing_review_settings_uses_the_stricter_of_base_and_proposed(repo):
     }
 
 
-def test_review_settings_floor_at_ordinary_even_when_documented(repo):
-    commit_base_settings(repo, settings_text(["**"]))
-    (repo / CONFIG).write_text(settings_text(["**"], extra="# reviewed\n"))
-    change_plan(repo, paths=[CONFIG], tier="documentation")
-    error = prepare(repo, status=1)["error"]
-    assert f"{CONFIG} (review settings)" in error
-
-
-@pytest.mark.parametrize(
-    "setting,message",
-    [
-        ('documentation = "docs/**"', "review.documentation"),
-        ("sensitive = [1]", "review.sensitive"),
-        ('sensitive = [""]', "review.sensitive"),
-        ("skip = true", "review"),
-    ],
-)
-def test_invalid_review_settings_fail_planning(repo, setting, message):
+def test_invalid_review_settings_fail_planning(repo):
     commit_base_settings(repo, settings_text(["docs/**"]))
-    (repo / CONFIG).write_text(f"schema_version = 2\n[review]\n{setting}\n")
+    (repo / CONFIG).write_text("schema_version = 2\n[review]\nsensitive = [1]\n")
     change_plan(repo, paths=["app.txt", CONFIG])
     result = prepare(repo, status=1)
-    assert result["status"] == "INCOMPLETE" and message in result["error"]
-
-
-@pytest.mark.parametrize(
-    "name,rule",
-    [
-        ("GNUmakefile", "build recipe"),
-        ("build/rules.mk", "build recipe"),
-        (".engineering/scripts/check.sh", "check script"),
-        (".claude/statusline.sh", "agent-executed script"),
-    ],
-)
-def test_build_and_agent_scripts_floor_at_sensitive(repo, name, rule):
-    error = prepare_edits(repo, [name], tier="ordinary")["error"]
-    assert f"{name} ({rule})" in error
+    assert result["status"] == "INCOMPLETE" and "review.sensitive" in result["error"]
 
 
 def test_sensitive_reports_need_separate_sessions(repo):
@@ -291,41 +202,6 @@ def floor_error(root, paths, checks, tier):
     return prepare_paths(root, paths, checks, status=1, tier=tier)["error"]
 
 
-@consumers
-@pytest.mark.parametrize(
-    "name,rule",
-    [
-        ("pyproject.toml", "dependency manifest or lock"),
-        ("uv.lock", "dependency manifest or lock"),
-        ("web/package.json", "dependency manifest or lock"),
-        (".claude/settings.json", "agent settings"),
-        (".claude/hooks/project_hook.py", "hook"),
-        (".github/workflows/ci.yml", "workflow"),
-        ("Makefile", "build recipe"),
-    ],
-)
-def test_consumer_starter_sensitive_paths_floor_at_sensitive(project, name, rule):
-    path = project / name
-    path.parent.mkdir(parents=True, exist_ok=True)
-    edit(project, name, (path.read_text() if path.exists() else "") + "\n")
-    checks = [CHECK, HEALTH]
-    error = floor_error(project, [name], checks, "ordinary")
-    assert "below the tier floor sensitive" in error
-    assert name in error and rule in error
-    assert prepare_paths(project, [name], checks)["floor"] == "sensitive"
-
-
-@consumers
-@pytest.mark.parametrize("name", ["CLAUDE.md", "AGENTS.md", "docs/agents/domain.md"])
-def test_agent_policy_is_never_documentation(project, name):
-    edit(project, name)
-    error = floor_error(project, [name], [CHECK, HEALTH], "documentation")
-    assert "below the tier floor ordinary" in error and "agent policy" in error
-    result = prepare_paths(project, [name], [CHECK, HEALTH], tier="ordinary")
-    assert result["floor"] == "ordinary"
-    assert result["required_roles"] == ["standards", "spec", "behavioral"]
-
-
 def test_generated_and_adopted_projects_share_review_defaults(pristine):
     settings = [
         tomllib.loads((pristine[kind] / CONFIG).read_text())["review"]
@@ -338,66 +214,16 @@ def test_generated_and_adopted_projects_share_review_defaults(pristine):
     }
 
 
-@consumers
-def test_consumer_readme_is_documentation_by_default(project):
-    edit(project, "README.md")
-    checks = [[*DOCS, "README.md"]]
-    result = prepare_paths(project, ["README.md"], checks, tier="documentation")
-    assert result["floor"] == "documentation"
-    assert result["required_roles"] == ["behavioral"]
-
-
-@consumers
-def test_mixed_change_takes_the_highest_path_floor(project):
-    edit(project, "README.md")
-    edit(project, "Makefile")
-    names = ["README.md", "Makefile"]
-    error = floor_error(project, names, [CHECK, HEALTH], "ordinary")
-    assert "Makefile (build recipe)" in error and "README.md" not in error
-    assert prepare_paths(project, names, [CHECK, HEALTH])["status"] == "INCOMPLETE"
-
-
-@consumers
-def test_required_checks_are_unchanged_by_tier(project):
-    set_threshold(project)
-    name = ".engineering/config.toml"
-    errors = {
-        tier: floor_error(project, [name], [CHECK], tier)
-        for tier in ("ordinary", "sensitive")
-    }
-    assert all("engineering-check" in error for error in errors.values())
-    assert errors["ordinary"] == errors["sensitive"]
-
-
 @maintainer_checkout
-@pytest.mark.parametrize(
-    "name,rule",
-    [
-        (".engineering/engineering/verification.py", "verification module"),
-        (".engineering/engineering/markdown.py", "verification module"),
-        (".engineering/engineering/publication_git.py", "publication module"),
-        (".engineering/engineering/deps.py", "dependency module"),
-        (".engineering/engineering/graft.py", "dependency module"),
-        (".engineering/engineering/skill_install.py", "skill installation module"),
-        (".engineering/engineering/transaction.py", "apply or transaction module"),
-        (".engineering/engineering/migrate/legacy.py", "migration module"),
-    ],
-)
-def test_maintainer_destructive_modules_floor_at_sensitive(project, name, rule):
+def test_maintainer_destructive_modules_floor_at_sensitive(project):
+    # Each maintainer floor rule is unit tested; this shows the role reaches them.
+    name, rule = ".engineering/engineering/verification.py", "verification module"
     (project / name).parent.mkdir(parents=True, exist_ok=True)
     edit(project, name, "VALUE = 2\n")
     checks = [CHECK, *SUITES]
     error = floor_error(project, [name], checks, "ordinary")
     assert name in error and rule in error
     assert prepare_paths(project, [name], checks)["floor"] == "sensitive"
-
-
-@maintainer_checkout
-def test_other_maintainer_source_floors_at_ordinary(project):
-    name = ".engineering/engineering/tool.py"
-    edit(project, name)
-    result = prepare_paths(project, [name], [CHECK, *SUITES], tier="ordinary")
-    assert result["floor"] == "ordinary"
 
 
 def test_status_reports_the_floor_current_rules_give(repo):
