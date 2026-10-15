@@ -1,4 +1,4 @@
-"""Gather the repository facts that verification requirements are decided from."""
+"""Gather the repository facts that verification decisions are made from."""
 
 import tomllib
 from collections.abc import Mapping
@@ -7,7 +7,7 @@ from pathlib import Path
 from types import MappingProxyType
 from typing import Any
 
-from .config import object_value
+from .config import object_value, safe_path
 from .installation import MANIFEST_PATH, ROLES, STATE_PATH, installation_role
 from .ownership import json_object, read_bytes, validate_ownership
 from .settings import (
@@ -53,6 +53,90 @@ class RequirementFacts:
     graft: bool
     starter_source: bool
     paths: Mapping[str, PathFacts]
+
+
+@dataclass(frozen=True)
+class StoredRecord:
+    """One stored evidence record as read; data is None when it is unreadable.
+
+    Cyclic marks a history reference back to a record already read.
+    """
+
+    path: str
+    data: Mapping[str, Any] | None
+    cyclic: bool = False
+
+
+@dataclass(frozen=True)
+class EvidenceFacts:
+    """Plain, immutable inputs to evidence decisions; no repository handles.
+
+    Token and inputs are the current snapshot: the plan, comparison base,
+    proposed and baseline file fingerprints and declared tool results. Records
+    are the stored record, then the history its carried reports name. Each
+    gathered JSON value is frozen (mappings read-only, lists as tuples).
+    """
+
+    token: str
+    inputs: Mapping[str, Any]
+    records: tuple[StoredRecord, ...]
+
+
+def frozen_json(value: Any) -> Any:
+    """A read-only copy of a JSON value; frozen input is frozen again unchanged."""
+    if isinstance(value, Mapping):
+        return MappingProxyType({key: frozen_json(item) for key, item in value.items()})
+    if isinstance(value, (list, tuple)):
+        return tuple(frozen_json(item) for item in value)
+    return value
+
+
+def plain_json(value: Any) -> Any:
+    """A writable JSON copy of a frozen value, for output and storage."""
+    if isinstance(value, Mapping):
+        return {key: plain_json(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [plain_json(item) for item in value]
+    return value
+
+
+def stored_history(
+    root: Path, name: str, data: dict[str, Any]
+) -> tuple[StoredRecord, ...]:
+    """The stored record, then each history record a carried report relies on.
+
+    History is followed only while a record carries reports, read once, and
+    stops at an unreadable or already-read record.
+    """
+    records = [StoredRecord(name, frozen_json(data))]
+    seen = {safe_path(root, name)}
+    while carries(data):
+        name = data["previous_evidence"]
+        path = safe_path(root, name)
+        if path in seen:
+            records.append(StoredRecord(name, None, cyclic=True))
+            break
+        seen.add(path)
+        try:
+            data = json_object(path.read_bytes())
+        except OSError:
+            records.append(StoredRecord(name, None))
+            break
+        records.append(StoredRecord(name, frozen_json(data)))
+    return tuple(records)
+
+
+def carries(data: dict[str, Any]) -> bool:
+    """Whether a record names history for at least one carried report."""
+    reports = data.get("reports")
+    return (
+        isinstance(reports, dict)
+        and any(
+            isinstance(item, dict) and "carried_from" in item
+            for item in reports.values()
+        )
+        and isinstance(data.get("previous_evidence"), str)
+    )
 
 
 def gather(

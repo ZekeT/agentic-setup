@@ -83,20 +83,15 @@ def test_checks_leave_capture_immutable_even_when_command_mutates(repo):
     assert prepare(repo)["status"] == "INCOMPLETE"
 
 
-@pytest.mark.parametrize("edit", ["addition", "deletion", "mode"])
-def test_checkpoint_must_cover_every_content_change(repo, edit):
+def test_checkpoint_must_cover_a_deletion(repo):
+    # Additions, modes and other uncovered content are unit tested at the
+    # coverage decision; this shows committed content reaches it.
     from .test_verification import change_plan
 
     git(repo, "add", "app.txt")
     git(repo, "commit", "-m", "initial checkpoint")
     paths = ["app.txt"]
-    if edit == "addition":
-        (repo / "new.txt").write_text("intended addition\n")
-        paths.append("new.txt")
-    elif edit == "deletion":
-        (repo / "app.txt").unlink()
-    else:
-        (repo / "app.txt").chmod(0o755)
+    (repo / "app.txt").unlink()
     change_plan(repo, paths=paths)
     token = prepare(repo)["snapshot"]
     assert "checkpoint" in native_report(repo, token, "standards", status=1)["error"]

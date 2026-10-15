@@ -66,36 +66,14 @@ def test_failed_carried_rerun_drops_behavioral_and_stays_failed(repo):
     assert cli(repo, "status", "--change", "example", status=1)["status"] == "FAIL"
 
 
-@pytest.mark.parametrize(
-    "change", ["patch", "plan", "checks", "tools", "input", "overlap"]
-)
-def test_changed_inputs_or_upstream_overlap_carry_nothing(repo, change):
+def test_upstream_overlap_with_scope_carries_nothing(repo):
+    # Changed plans, probes and scoped content are unit tested at the carry seam;
+    # this shows the upstream paths Git reports reach that decision.
     from .test_verification import change_plan
 
-    if change == "input":
-        (repo / ".gitignore").write_text(
-            ".engineering/state/verification/\ninstalled\n"
-        )
-        (repo / "installed").write_text("old\n")
-        git(repo, "add", ".gitignore")
-        git(repo, "commit", "-m", "ignore local dependency")
-        change_plan(repo, paths=["app.txt", ".gitignore"], inputs=["installed"])
-    if change == "overlap":
-        change_plan(repo, paths=["app.txt", "context.txt"])
+    change_plan(repo, paths=["app.txt", "context.txt"])
     complete(repo)
-    advance_and_rebase(
-        repo, {"context.txt": "upstream\n"} if change == "overlap" else None
-    )
-    if change == "patch":
-        (repo / "app.txt").write_text("different patch\n")
-    elif change == "plan":
-        change_plan(repo, requirement="Changed requirement")
-    elif change == "checks":
-        change_plan(repo, checks=[["make", "check"], ["git", "--version"]])
-    elif change == "tools":
-        change_plan(repo, tools=[["git", "--version"]])
-    elif change == "input":
-        (repo / "installed").write_text("new\n")
+    advance_and_rebase(repo, {"context.txt": "upstream\n"})
     current = prepare(repo)
     assert current["reports"] == {}
     assert current["status"] == "INCOMPLETE"
@@ -154,30 +132,6 @@ def test_publication_accepts_carried_pass_and_keeps_remote_base_guard(repo, host
     assert cli(repo, "status", "--change", "example")["status"] == "PASS"
     result = publish(repo, "preflight", status=1)
     assert "moved remotely" in result["error"]
-
-
-def test_changed_tool_output_carries_nothing(repo):
-    from .test_verification import change_plan
-
-    version = repo / ".engineering/state/verification/version"
-    version.write_text("1\n")
-    change_plan(repo, tools=[["cat", str(version)]])
-    complete(repo)
-    advance_and_rebase(repo)
-    version.write_text("2\n")
-    assert prepare(repo)["reports"] == {}
-
-
-def test_carried_report_tampering_is_rejected(repo):
-    complete(repo)
-    advance_and_rebase(repo)
-    prepare(repo)
-    path = repo / ".engineering/state/verification/example.json"
-    record = json.loads(path.read_text())
-    record["reports"]["behavioral"]["summary"] = "unreviewed replacement"
-    path.write_text(json.dumps(record))
-    result = cli(repo, "status", "--change", "example", status=1)
-    assert "differs from previous evidence" in result["error"]
 
 
 def test_removed_history_folder_requires_fresh_proof(repo):

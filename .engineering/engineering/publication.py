@@ -12,8 +12,9 @@ from .publication_git import commit_scope, guard_push, pushed, validate_tree
 from .publication_provider import create_pr, find_pr
 from .source import git
 from .transaction import write_files
-from .verification import location, outcome, read_record
+from .verification import location, read_record
 from .verification_checkout import validate_checkout
+from .verification_evidence import outcome
 from .verification_execution import evidence_lock
 from .verification_inputs import strings
 from .verification_snapshot import identity, snapshot

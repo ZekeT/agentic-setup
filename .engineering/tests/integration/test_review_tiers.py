@@ -16,7 +16,6 @@ from .test_verification import (
     complete,
     git,
     prepare,
-    report,
 )
 from .test_verification import repo as repo
 from .test_verification_requirements import (
@@ -52,20 +51,6 @@ def test_declared_tier_below_floor_names_paths_and_rules(repo):
     change_plan(repo, tier="sensitive")
     result = prepare(repo)
     assert result["floor"] == "sensitive" and result["required_roles"][-1] == "security"
-
-
-def test_raised_tier_requires_its_roles_and_reports_them(repo):
-    change_plan(repo, tier="sensitive", tier_reason="Raised: parses credentials")
-    token = prepare(repo)["snapshot"]
-    cli(repo, "check", "--change", "example", "--snapshot", token)
-    report(repo, token, "behavioral")
-    result = cli(repo, "status", "--change", "example", status=1)
-    assert result["tier"] == "sensitive"
-    assert result["tier_reason"] == "Raised: parses credentials"
-    assert result["floor"] == "ordinary"
-    assert result["required_roles"] == ["standards", "spec", "behavioral", "security"]
-    assert result["missing_roles"] == ["standards", "spec", "security"]
-    assert result["shared_reviewers"] == {}
 
 
 CONFIG = ".engineering/config.toml"
@@ -134,30 +119,6 @@ def test_invalid_review_settings_fail_planning(repo):
     change_plan(repo, paths=["app.txt", CONFIG])
     result = prepare(repo, status=1)
     assert result["status"] == "INCOMPLETE" and "review.sensitive" in result["error"]
-
-
-def test_sensitive_reports_need_separate_sessions(repo):
-    change_plan(repo, tier="sensitive", tier_reason="Raised: parses credentials")
-    token = prepare(repo)["snapshot"]
-    cli(repo, "check", "--change", "example", "--snapshot", token)
-    report(repo, token, "standards", reviewer="one-session")
-    result = report(repo, token, "security", reviewer="one-session", expected=1)
-    assert "separate" in result["error"]
-    # Replacing a role's own report is not sharing.
-    report(repo, token, "standards", reviewer="one-session")
-    report(repo, token, "spec")
-    report(repo, token, "behavioral")
-    report(repo, token, "security")
-    assert cli(repo, "status", "--change", "example")["status"] == "PASS"
-    # A record that bypassed the record check still cannot pass.
-    path = repo / ".engineering/state/verification/example.json"
-    data = json.loads(path.read_text())
-    data["reports"]["security"]["reviewer"] = "one-session"
-    path.write_text(json.dumps(data))
-    result = cli(repo, "status", "--change", "example", status=1)
-    assert result["status"] == "INCOMPLETE"
-    assert result["shared_reviewers"] == {"one-session": ["security", "standards"]}
-    assert any("separate" in item for item in result["missing"])
 
 
 def test_record_stores_floor_categories_checks_and_roles(repo):

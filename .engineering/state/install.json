@@ -214,7 +214,7 @@
       "ownership": {
         "mode": "file"
       },
-      "upstream": "61d77090c3307a7e4a786e07c23003aa516c31be07c9b2ce8314115ef0825d8a"
+      "upstream": "70ed3149ebcfca94f2f968331c1c3a67787b15d1909aa6442008503cb7a2b26f"
     },
     ".engineering/engineering/publication_git.py": {
       "ownership": {
@@ -268,19 +268,25 @@
       "ownership": {
         "mode": "file"
       },
-      "upstream": "4867dd9e775b38808b6b44da3c0486a285952e67eba98412bda566412e034d14"
+      "upstream": "f808f531e62c097aa3c0d546b4bb2cca60efa5b2a5fca800aaae2459ca12e877"
     },
     ".engineering/engineering/verification_carry.py": {
       "ownership": {
         "mode": "file"
       },
-      "upstream": "e26b9906fa960b55c596401830d629c27dad4d4b4a9b6e323b4f0838449add18"
+      "upstream": "1608d037848a2fe4627736a2e3356391742165152a328057b15781bca00c974c"
     },
     ".engineering/engineering/verification_checkout.py": {
       "ownership": {
         "mode": "file"
       },
       "upstream": "3d4c1e47c997bcaf30e93acc48810d1b67e18c50358375525ee191b192d01772"
+    },
+    ".engineering/engineering/verification_evidence.py": {
+      "ownership": {
+        "mode": "file"
+      },
+      "upstream": "e1ebb52818dad56943c05afd208e682e28bac21f1a15fd11fa262cd4fe01c3cc"
     },
     ".engineering/engineering/verification_execution.py": {
       "ownership": {
@@ -292,7 +298,7 @@
       "ownership": {
         "mode": "file"
       },
-      "upstream": "021aa89c2367a0760c7925212dcdde49649021cb1b0e0ca31d1682741e4529a3"
+      "upstream": "38f51f46360686e58c70273830d0a3981d9b4222a6d000db27d3359d1ddf782c"
     },
     ".engineering/engineering/verification_git.py": {
       "ownership": {
@@ -316,7 +322,7 @@
       "ownership": {
         "mode": "file"
       },
-      "upstream": "3d4226240cf30a709dc2d7d9bffaf175bf96e1af1f319efe20779ad6953115bc"
+      "upstream": "c82bc17d60835815b0d71ab30cd695b6b22702ffb51ca5d972ce9856bb2d610f"
     },
     ".engineering/engineering/verification_snapshot.py": {
       "ownership": {

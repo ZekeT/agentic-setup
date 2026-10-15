@@ -191,7 +191,10 @@
       "ownership": {
         "mode": "file"
       },
-      "previous": [],
+      "previous": [
+        "a710863baaac89d4f692e6b8f9fa17e4c809ecf6d3e41e8fd3832682ea03a9b3",
+        "8648410b7dc3fe91b35255ac89dee0a826e3707f43cbaa1b00651889b8f08ae8"
+      ],
       "sha256": "a710863baaac89d4f692e6b8f9fa17e4c809ecf6d3e41e8fd3832682ea03a9b3"
     },
     ".engineering/docs/commits-and-prs.md": {
@@ -241,7 +244,9 @@
         "mode": "file"
       },
       "previous": [
-        "dace7bb3174e56cba6641c58c2368aa0ca548889cd6617479a94e1b1c7e21c85"
+        "dace7bb3174e56cba6641c58c2368aa0ca548889cd6617479a94e1b1c7e21c85",
+        "3bbd3a56526b58175ad67445c2fadeaa1372198a2b12f89692594f7af499a5f1",
+        "c1e57f3b86504ab7e5ef251b553a4a5d833afd50a807bb0a784246524353c213"
       ],
       "sha256": "3bbd3a56526b58175ad67445c2fadeaa1372198a2b12f89692594f7af499a5f1"
     },
@@ -499,7 +504,7 @@
     },
     ".engineering/engineering/publication.py": {
       "executable": false,
-      "owned_sha256": "61d77090c3307a7e4a786e07c23003aa516c31be07c9b2ce8314115ef0825d8a",
+      "owned_sha256": "70ed3149ebcfca94f2f968331c1c3a67787b15d1909aa6442008503cb7a2b26f",
       "ownership": {
         "mode": "file"
       },
@@ -508,9 +513,10 @@
         "5ef499686f2a468e7631a05c5f3fdc8a6e5a044fe23698a2a8588aaf47ef4eb5",
         "a3718ee1698328f19bc1bdbe01ac8c7839fa8429a8487c72fee7c796421ee094",
         "1c9c00fede8e1f6e1c0a897e3f5c8b1b210eb9b1169da7744a70627e557d2969",
-        "02f7c8d6362747e1d545aba1d2942935548414e342c0458d9fabe123ade85a85"
+        "02f7c8d6362747e1d545aba1d2942935548414e342c0458d9fabe123ade85a85",
+        "61d77090c3307a7e4a786e07c23003aa516c31be07c9b2ce8314115ef0825d8a"
       ],
-      "sha256": "61d77090c3307a7e4a786e07c23003aa516c31be07c9b2ce8314115ef0825d8a"
+      "sha256": "70ed3149ebcfca94f2f968331c1c3a67787b15d1909aa6442008503cb7a2b26f"
     },
     ".engineering/engineering/publication_git.py": {
       "executable": false,
@@ -615,7 +621,7 @@
     },
     ".engineering/engineering/verification.py": {
       "executable": false,
-      "owned_sha256": "4867dd9e775b38808b6b44da3c0486a285952e67eba98412bda566412e034d14",
+      "owned_sha256": "f808f531e62c097aa3c0d546b4bb2cca60efa5b2a5fca800aaae2459ca12e877",
       "ownership": {
         "mode": "file"
       },
@@ -634,20 +640,22 @@
         "24e272a82ab2028cd93f435a81e698dfa09a4fc98e5466f38cf3c17522525522",
         "0000267d8c940bef828d50fdf49d924e41672a8b68860f62effdd98765db4c5d",
         "cc7f10b696c90e708c5e36170d709eaa61ee07a89d6051f8867a05a0c58b2022",
-        "64e06c6665692cef9a8abd1a4cfb172e567be125eb2a86ee8d3fa1fd46303ae1"
+        "64e06c6665692cef9a8abd1a4cfb172e567be125eb2a86ee8d3fa1fd46303ae1",
+        "4867dd9e775b38808b6b44da3c0486a285952e67eba98412bda566412e034d14"
       ],
-      "sha256": "4867dd9e775b38808b6b44da3c0486a285952e67eba98412bda566412e034d14"
+      "sha256": "f808f531e62c097aa3c0d546b4bb2cca60efa5b2a5fca800aaae2459ca12e877"
     },
     ".engineering/engineering/verification_carry.py": {
       "executable": false,
-      "owned_sha256": "e26b9906fa960b55c596401830d629c27dad4d4b4a9b6e323b4f0838449add18",
+      "owned_sha256": "1608d037848a2fe4627736a2e3356391742165152a328057b15781bca00c974c",
       "ownership": {
         "mode": "file"
       },
       "previous": [
-        "3bb4d3447ff5fecd5b8f8fe713090612e4c2f748b9f25d15aafe9d286b3ee6ac"
+        "3bb4d3447ff5fecd5b8f8fe713090612e4c2f748b9f25d15aafe9d286b3ee6ac",
+        "e26b9906fa960b55c596401830d629c27dad4d4b4a9b6e323b4f0838449add18"
       ],
-      "sha256": "e26b9906fa960b55c596401830d629c27dad4d4b4a9b6e323b4f0838449add18"
+      "sha256": "1608d037848a2fe4627736a2e3356391742165152a328057b15781bca00c974c"
     },
     ".engineering/engineering/verification_checkout.py": {
       "executable": false,
@@ -667,6 +675,15 @@
       ],
       "sha256": "3d4c1e47c997bcaf30e93acc48810d1b67e18c50358375525ee191b192d01772"
     },
+    ".engineering/engineering/verification_evidence.py": {
+      "executable": false,
+      "owned_sha256": "e1ebb52818dad56943c05afd208e682e28bac21f1a15fd11fa262cd4fe01c3cc",
+      "ownership": {
+        "mode": "file"
+      },
+      "previous": [],
+      "sha256": "e1ebb52818dad56943c05afd208e682e28bac21f1a15fd11fa262cd4fe01c3cc"
+    },
     ".engineering/engineering/verification_execution.py": {
       "executable": false,
       "owned_sha256": "0ca7ecc7431fe7fede613c0164734d4378f32723d1602333ca4a17d4b7adb6fc",
@@ -682,12 +699,14 @@
     },
     ".engineering/engineering/verification_facts.py": {
       "executable": false,
-      "owned_sha256": "021aa89c2367a0760c7925212dcdde49649021cb1b0e0ca31d1682741e4529a3",
+      "owned_sha256": "38f51f46360686e58c70273830d0a3981d9b4222a6d000db27d3359d1ddf782c",
       "ownership": {
         "mode": "file"
       },
-      "previous": [],
-      "sha256": "021aa89c2367a0760c7925212dcdde49649021cb1b0e0ca31d1682741e4529a3"
+      "previous": [
+        "021aa89c2367a0760c7925212dcdde49649021cb1b0e0ca31d1682741e4529a3"
+      ],
+      "sha256": "38f51f46360686e58c70273830d0a3981d9b4222a6d000db27d3359d1ddf782c"
     },
     ".engineering/engineering/verification_git.py": {
       "executable": false,
@@ -737,15 +756,16 @@
     },
     ".engineering/engineering/verification_semantic.py": {
       "executable": false,
-      "owned_sha256": "3d4226240cf30a709dc2d7d9bffaf175bf96e1af1f319efe20779ad6953115bc",
+      "owned_sha256": "c82bc17d60835815b0d71ab30cd695b6b22702ffb51ca5d972ce9856bb2d610f",
       "ownership": {
         "mode": "file"
       },
       "previous": [
         "e1b51c48cb6af912c2b24e7b2d5350c7fdc1bbf2e401adb1d7d4b6d57a776c59",
-        "59ca7b017f84e24d006c1deffeb61f2d945d843b785af6c0fbed91cbfb8a4508"
+        "59ca7b017f84e24d006c1deffeb61f2d945d843b785af6c0fbed91cbfb8a4508",
+        "3d4226240cf30a709dc2d7d9bffaf175bf96e1af1f319efe20779ad6953115bc"
       ],
-      "sha256": "3d4226240cf30a709dc2d7d9bffaf175bf96e1af1f319efe20779ad6953115bc"
+      "sha256": "c82bc17d60835815b0d71ab30cd695b6b22702ffb51ca5d972ce9856bb2d610f"
     },
     ".engineering/engineering/verification_snapshot.py": {
       "executable": false,

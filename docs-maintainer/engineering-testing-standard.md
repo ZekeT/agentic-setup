@@ -11,10 +11,13 @@ consumer projects follow the distributed testing guide and the pinned upstream
 - **Put pure decision logic behind the family's decision seam and unit test it
   there.** A migrated family's shell gathers Git and filesystem facts into a
   plain data value, and decision functions take that value and return a
-  classification, floor, outcome or validation error. Verification requirements
-  are migrated: `verification_facts.py` gathers, `verification_requirements.py`
-  decides, and plan shape is checked by `plan_shape`. Verification evidence and
-  publication follow (tickets 05–06 of `engineering-test-speed`). New rules go
+  classification, floor, outcome or validation error. Verification is
+  migrated: `verification_facts.py` gathers, `verification_requirements.py`
+  decides requirements, `verification_evidence.py` decides reports, stored
+  records, staleness and outcome, plan shape is checked by `plan_shape`, report
+  carrying by `carry_candidate`/`carried` and native coverage by
+  `native_ids`/`reject_uncovered`. Publication follows (ticket 06 of
+  `engineering-test-speed`). New rules go
   into those functions, with unit tests in `.engineering/tests/unit/` that assert
   the observable decision for a given facts value, not which helper ran or how
   many Git calls happened. Unit-tier builders live in that directory's

@@ -213,28 +213,6 @@ def test_unrelated_edits_preserve_current_evidence(repo):
     assert (repo / "unrelated.txt").read_text() == "must survive\n"
 
 
-def test_failed_checks_and_missing_security_cannot_pass(repo):
-    change_plan(repo, tier="sensitive", tier_reason="Raised: handles credentials")
-    token = prepare(repo)["snapshot"]
-    cli(repo, "check", "--change", "example", "--snapshot", token)
-    report(repo, token, "standards")
-    report(repo, token, "spec")
-    report(repo, token, "behavioral")
-    result = cli(repo, "status", "--change", "example", status=1)
-    assert result["missing"] == ["security"]
-    report(repo, token, "security", "FAIL")
-    assert cli(repo, "status", "--change", "example", status=1)["status"] == "FAIL"
-    (repo / "Makefile").write_text("check:\n\t@exit 7\n")
-    change_plan(repo, paths=["app.txt", "Makefile"])
-    token = prepare(repo)["snapshot"]
-    assert (
-        cli(repo, "check", "--change", "example", "--snapshot", token, status=1)[
-            "status"
-        ]
-        == "FAIL"
-    )
-
-
 def test_tool_versions_and_ignored_explicit_inputs_invalidate(repo):
     version = repo / ".engineering/state/verification/tool-version"
     version.write_text("1.0\n")
@@ -257,19 +235,14 @@ def test_tool_versions_and_ignored_explicit_inputs_invalidate(repo):
     assert cli(repo, "status", "--change", "example", status=1)["status"] == "STALE"
 
 
-@pytest.mark.parametrize("kind", ["secret", "symlink", "bad-record"])
+@pytest.mark.parametrize("kind", ["secret", "symlink"])
 def test_unsafe_or_malformed_evidence_fails_closed(repo, kind):
     complete(repo)
     if kind == "secret":
         change_plan(repo, inputs=[".env.local"])
-    elif kind == "symlink":
+    else:
         (repo / "app.txt").unlink()
         (repo / "app.txt").symlink_to("Makefile")
-    else:
-        record = repo / ".engineering/state/verification/example.json"
-        data = json.loads(record.read_text())
-        data["reports"]["behavioral"] = {"verdict": "PASS"}
-        record.write_text(json.dumps(data))
     args = (
         [
             "prepare",
@@ -285,21 +258,11 @@ def test_unsafe_or_malformed_evidence_fails_closed(repo, kind):
     assert result["status"] == "INCOMPLETE"
 
 
-def test_missing_and_stale_reports_do_not_claim_verification(repo):
+def test_status_without_evidence_is_incomplete(repo):
+    # Report, staleness and completeness rules are unit tested at the evidence seam.
     assert (
         cli(repo, "status", "--change", "example", status=1)["status"] == "INCOMPLETE"
     )
-    token = prepare(repo)["snapshot"]
-    result = report(repo, token, "behavioral", expected=1)
-    assert "successful recorded" in result["error"]
-    report(repo, token, "standards")
-    report(repo, token, "spec")
-    result = cli(repo, "status", "--change", "example", status=1)
-    assert "behavioral" in result["missing"]
-    assert "Fresh read-only reviewer" in result["handoff"]
-    (repo / "app.txt").write_text("correction\n")
-    prepare(repo)
-    assert "STALE report" in report(repo, token, "standards", expected=1)["error"]
 
 
 def test_status_and_reprepare_do_not_rerun_checks(repo):

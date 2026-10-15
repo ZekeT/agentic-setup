@@ -4,7 +4,7 @@
 
 **Blocked by:** 02 (ADR and maintainer testing standard), 03 (batched Git reads). Both merged.
 
-**Status:** implemented on `test/unit-tier-requirement-decisions`; independent verification pending (not accepted, published or merged)
+**Status:** merged (PR [#55](https://github.com/ZekeT/agentic-starter/pull/55), `0e6eea8`)
 
 **Review tier:** sensitive (verification modules)
 
@@ -53,3 +53,4 @@
   | Full engineering pytest suite | 593 tests, 887 s (ticket 03) | 652 tests, 794 s |
 
   The full-suite count rises because 136 cheap unit tests replace 77 CLI cases (counting each parameter). The full suite remains dominated by publication and journey tests that tickets 05–07 address.
+- 2026-10-15: published as PR [#55](https://github.com/ZekeT/agentic-starter/pull/55) and merged into `main` as `0e6eea8` (GitHub `mergedAt` 2026-10-15T06:30:14Z).

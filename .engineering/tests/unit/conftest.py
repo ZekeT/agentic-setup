@@ -6,6 +6,7 @@ from types import MappingProxyType
 
 import pytest
 from engineering.verification_facts import PathFacts, RequirementFacts
+from engineering.verification_requirements import REVIEWERS
 
 # Starter review defaults (settings.REVIEW_DEFAULTS), written down as data.
 DEFAULT_REVIEW = MappingProxyType(
@@ -124,3 +125,96 @@ def plan():
         }
 
     return build
+
+
+# Evidence values as stored JSON: snapshot tokens and full commit IDs.
+TOKEN = "1" * 64
+BASE = "b" * 40
+FILE = {"sha256": "f" * 64, "executable": False}
+
+
+@pytest.fixture
+def report():
+    """An independent PASS report for the current snapshot."""
+
+    def build(role="behavioral", **changes):
+        native = (
+            {"reviewed_commit": "c" * 40, "comparison_base": BASE}
+            if role in ("standards", "spec")
+            else {}
+        )
+        return {
+            **native,
+            "snapshot": TOKEN,
+            "role": role,
+            "reviewer": f"fresh-{role}-session",
+            "independent": True,
+            "verdict": "PASS",
+            "summary": "Inspected fixture behavior against the requirement",
+            "findings": [],
+            "coverage_gaps": [],
+            **changes,
+        }
+
+    return build
+
+
+@pytest.fixture
+def inputs(plan):
+    """Snapshot inputs for a one-path ordinary plan."""
+
+    def build(**changes):
+        return {
+            "base": BASE,
+            "base_tip": BASE,
+            "files": {"app.txt": FILE, "Makefile": FILE},
+            "plan": plan(["app.txt"], tier="ordinary"),
+            "tools": [
+                {
+                    "command": ["python", "--version"],
+                    "exit_code": 0,
+                    "stdout": "Python 3.12.0\n",
+                    "stderr": "",
+                }
+            ],
+            "root": "/work/project",
+            "runtime": "3.12.0",
+            **changes,
+        }
+
+    return build
+
+
+@pytest.fixture
+def record(inputs):
+    """A stored schema 3 record of the given reports, with passing checks."""
+
+    def build(*reports, tier="ordinary", checks=None, snapshot=TOKEN, **changes):
+        current = inputs()
+        current["plan"]["tier"] = tier
+        return {
+            "schema_version": 3,
+            "snapshot": snapshot,
+            "inputs": current,
+            "requirements": {
+                "floor": "ordinary",
+                "paths": {
+                    "sensitive": {},
+                    "ordinary": {"app.txt": "no documentation rule"},
+                    "documentation": {},
+                },
+                "checks": [["make", "check"]],
+                "roles": list(REVIEWERS[tier]),
+            },
+            "checks": ([passed(["make", "check"])] if checks is None else list(checks)),
+            "reports": {item["role"]: item for item in reports},
+            "checkout": ".engineering/state/verification/example-1/checkout",
+            **changes,
+        }
+
+    return build
+
+
+def passed(command, exit_code=0):
+    """One recorded check result."""
+    return {"command": command, "exit_code": exit_code, "stdout": "", "stderr": ""}
