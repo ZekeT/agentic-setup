@@ -169,3 +169,15 @@ def test_inspection_refuses_symlinked_skill_parent(tmp_path):
     result = cli("inspect", target)
     assert result.returncode == 1
     assert "Symlink refused" in result.stderr
+
+
+def test_inspection_refuses_symlinked_skill_even_without_a_skill_file(tmp_path):
+    target = tmp_path / "app"
+    (target / ".claude/skills").mkdir(parents=True)
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    (target / ".claude/skills/external").symlink_to(outside, target_is_directory=True)
+    result = cli("inspect", target)
+    assert result.returncode == 1
+    assert "Symlink refused" in result.stderr
+    assert not list(outside.iterdir())

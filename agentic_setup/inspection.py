@@ -1,7 +1,6 @@
 """Read-only advice about an explicitly selected workspace."""
 
 import json
-import re
 import shlex
 from pathlib import Path
 from typing import Any
@@ -9,7 +8,7 @@ from typing import Any
 from .adopt import REGION, SOURCE, metadata_directory
 from .discovery import native_commands, standards
 from .files import Plan, checked_root, digest, git, path_at
-from .skills import BUNDLES
+from .skills import BUNDLES, skill_locations
 
 
 def record_at(plan: Plan, name: str) -> dict[str, Any]:
@@ -92,21 +91,7 @@ def skill_report(plan: Plan, metadata: str) -> list[str]:
             isinstance(record.get(key), str) for key in ("source", "commit")
         ):
             raise ValueError(f"Invalid skill revision record: {name}")
-    installed: dict[str, list[str]] = {}
-    for folder in (
-        ".claude/skills",
-        ".agents/skills",
-        ".cursor/skills",
-        ".codex/skills",
-        ".pi/skills",
-    ):
-        directory = path_at(plan.root, folder)
-        for path in sorted(directory.glob("*/SKILL.md")):
-            name = path.relative_to(plan.root).as_posix()
-            raw = plan.inspect(name) or b""
-            match = re.search(rb'^name:\s*[\'"]?([a-zA-Z0-9-]+)', raw, re.M)
-            exposed = match[1].decode().lower() if match else path.parent.name.lower()
-            installed.setdefault(exposed, []).append(name)
+    installed = skill_locations(plan)
     selected = {
         name: (source, revision)
         for source, revision, names in BUNDLES.values()

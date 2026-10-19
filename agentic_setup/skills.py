@@ -5,7 +5,7 @@ import re
 from pathlib import Path
 
 from .adopt import metadata_directory
-from .files import Plan, baseline, checked_root, encoded, git, read
+from .files import Plan, baseline, checked_root, encoded, git, path_at, read
 
 BUNDLES = {
     "matt": (
@@ -47,8 +47,9 @@ BUNDLES = {
 }
 
 
-def installed_names(plan: Plan) -> set[str]:
-    names: set[str] = set()
+def skill_locations(plan: Plan) -> dict[str, list[str]]:
+    """Validate each directory before probing for its skill declaration."""
+    locations: dict[str, list[str]] = {}
     for folder in (
         ".claude/skills",
         ".agents/skills",
@@ -56,20 +57,31 @@ def installed_names(plan: Plan) -> set[str]:
         ".codex/skills",
         ".pi/skills",
     ):
-        directory = plan.root / folder
-        if directory.is_symlink():
-            raise ValueError(f"Symlink refused: {folder}")
-        for path in sorted(directory.glob("*/SKILL.md")):
-            relative = path.relative_to(plan.root).as_posix()
-            raw = plan.inspect(relative) or b""
+        directory = path_at(plan.root, folder)
+        if not directory.exists():
+            continue
+        for child in sorted(directory.iterdir()):
+            relative = child.relative_to(plan.root).as_posix()
+            if not path_at(plan.root, relative).is_dir():
+                continue
+            skill = f"{relative}/SKILL.md"
+            raw = plan.inspect(skill)
+            if raw is None:
+                continue
             match = re.search(rb'^name:\s*[\'"]?([a-zA-Z0-9-]+)', raw, re.M)
-            name = match[1].decode().lower() if match else path.parent.name.lower()
-            if name in names:
-                plan.conflicts.append(
-                    f"{relative}: duplicate existing exposed name {name}"
-                )
-            names.add(name)
-    return names
+            name = match[1].decode().lower() if match else child.name.lower()
+            locations.setdefault(name, []).append(skill)
+    return locations
+
+
+def installed_names(plan: Plan) -> set[str]:
+    locations = skill_locations(plan)
+    for name, paths in locations.items():
+        if len(paths) > 1:
+            plan.conflicts.append(
+                f"{', '.join(paths)}: duplicate existing exposed name {name}"
+            )
+    return set(locations)
 
 
 def plan_skills(target: Path, checkout: Path, bundle: str) -> Plan:
