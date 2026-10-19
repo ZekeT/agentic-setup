@@ -31,7 +31,12 @@ This repository's own `.scratch/` tracks improvements to the setup tool. Its `do
 records product decisions, architecture and maintainer agent configuration. Its
 `tests/` verifies installation and preservation behavior in disposable projects.
 
-The external CLI inspects a target, builds a bounded preview, then applies that
+`agentic inspect` reports local setup, legacy remnants, convention differences and
+recorded skills without building or applying a mutation plan. It reuses bounded file
+access and the existing template/legacy catalogs; it never executes target commands
+or fetches upstream.
+
+The adoption/update CLI inspects a target, builds a bounded preview, then applies that
 exact preview. `agentic_setup/files.py` owns safe file access and rollback;
 `agentic_setup/adopt.py` recognizes legacy content and proposes guidance. The legacy hash
 catalog serves installation only. The previous implementation and its planning
