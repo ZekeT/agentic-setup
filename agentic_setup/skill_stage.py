@@ -150,9 +150,11 @@ def build_stage(
     if local is not None:
         if local == root or local.is_relative_to(root) or root.is_relative_to(local):
             raise ValueError("Skill source must be outside the target")
-        for directory, subdirectories, files in os.walk(local, followlinks=False):
+        for source_directory, subdirectories, files in os.walk(
+            local, followlinks=False
+        ):
             for name in subdirectories + files:
-                if (Path(directory) / name).is_symlink():
+                if (Path(source_directory) / name).is_symlink():
                     raise ValueError(
                         "Symlink in local skill source; refuse installer scan"
                     )
