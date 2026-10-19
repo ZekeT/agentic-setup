@@ -28,6 +28,9 @@ def legacy(tmp_path):
         (target / "CLAUDE.md").read_text() + "\nTeam rule: retain audit logs.\n"
     )
     run("git", "init", "-q", cwd=target)
+    # Fixture commits must finish without background repacking racing read-only checks.
+    run("git", "config", "gc.auto", "0", cwd=target)
+    run("git", "config", "maintenance.auto", "false", cwd=target)
     run("git", "add", ".", cwd=target)
     run(
         "git",

@@ -7,6 +7,7 @@ import sys
 from pathlib import Path
 
 from .adopt import plan_adoption
+from .inspection import inspect_target
 from .setup import SCOPES, initialize, plan_update
 from .skills import BUNDLES, plan_skills
 
@@ -17,6 +18,10 @@ def main() -> int:
         description="Agentic Setup: configure target workspaces with development conventions and skills",
     )
     commands = parser.add_subparsers(dest="command", required=True)
+    inspect = commands.add_parser(
+        "inspect", help="read-only setup and convention report"
+    )
+    inspect.add_argument("target", type=Path)
     adopt = commands.add_parser("adopt")
     adopt.add_argument("target", type=Path)
     adopt.add_argument("--minimal", action="store_true")
@@ -46,6 +51,9 @@ def main() -> int:
     skills.add_argument("--expect")
     args = parser.parse_args()
     try:
+        if args.command == "inspect":
+            print(inspect_target(args.target))
+            return 0
         if args.command == "init":
             initialize(args.target, args.python_seed)
             print(

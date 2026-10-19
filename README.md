@@ -18,6 +18,30 @@ Python 3.11+ and Git are **installer prerequisites**, not application
 requirements. The launcher uses an available versioned Python executable when the
 system python3 is older. No Node, uv, Makefile or Python application stack is imposed.
 
+## Inspect a target first
+
+```bash
+./agentic inspect /path/to/project
+```
+
+Inspection is read-only and also accepts a new destination or an existing directory
+without Git commits. It reports installed metadata, recognized v2 files, missing
+configuration, differences from recorded template baselines, project-owned guidance,
+local additions/edits, and potential update conflicts. It inventories project-local
+skills and recorded revisions, including missing files and duplicate exposed names.
+
+The report recommends initialization, adoption or minimal v2 adoption and explains
+Git prerequisites. Native command candidates are shown but never executed. Existing
+`.starter/` metadata is supported. Differences are advisory: exit 0 means the report
+completed, not that the project complies with every convention. Unsafe paths or
+malformed configuration return an error without modifying the target.
+
+Checks are limited to bundled guidance, known legacy paths, bounded setup documents
+and skill directories. This does not certify application code quality, traverse all
+instruction imports, verify installed skill contents against upstream, or check
+online for newer versions. A recorded revision differing from the bundled selection
+is not necessarily outdated. Online skill freshness and updates remain separate work.
+
 ## Move an existing starter project first
 
 From this external Agentic Setup checkout, against a committed Git project:
@@ -159,7 +183,7 @@ Existing `.starter/` installation records and licenses continue to be used in
 place; do not rename or duplicate them to upgrade. Conflicting metadata records
 in both locations require manual reconciliation. New workspaces use the new name.
 
-The skill installation command is `agentic skills install`. Unified `agentic inspect`,
-`agentic skills check` and `agentic skills update` are planned capabilities, not
-available commands. Development conventions is the term for shared workflow, Git
+The skill installation command is `agentic skills install`; `agentic inspect` reports
+local setup and recorded revisions. `agentic skills check` and `agentic skills update`
+are planned capabilities, not available commands. Development conventions is the term for shared workflow, Git
 preferences, standards and configuration; no profile abstraction is introduced.

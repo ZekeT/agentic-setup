@@ -38,7 +38,14 @@ def native_commands(plan: Plan) -> str:
     commands = []
     package = plan.inspect("package.json")
     if package:
-        scripts = json.loads(package).get("scripts", {})
+        config = json.loads(package)
+        if not isinstance(config, dict) or not isinstance(
+            config.get("scripts", {}), dict
+        ):
+            raise ValueError(
+                "Invalid package.json: expected an object with a scripts object"
+            )
+        scripts = config.get("scripts", {})
         manager = "npm"
         for lock, candidate in [
             ("pnpm-lock.yaml", "pnpm"),

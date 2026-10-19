@@ -24,9 +24,9 @@ conventions**. The receiving project is a **target workspace**. New installation
 metadata uses `.agentic-setup/`; published v3.0.0 `.starter/` records remain usable
 in place. Maintainer instructions live in `CONTRIBUTING.md`.
 
-Use `agentic init`, `agentic adopt`, `agentic update` and `agentic skills install`.
-Reserve `agentic inspect`, `agentic skills check` and `agentic skills update` for
-future implementations. A named **profile** can describe a bundle later, but no
+Use `agentic inspect`, `agentic init`, `agentic adopt`, `agentic update` and
+`agentic skills install`. Reserve `agentic skills check` and `agentic skills update`
+for future implementations. A named **profile** can describe a bundle later, but no
 profile mechanism is introduced now. Historical migration identifiers and immutable
 release tags keep their original names.
 
@@ -39,8 +39,8 @@ skills are installed unmodified into the target project itself. Each project own
 its application, documentation, scratch plans and intentional local overrides.
 
 Changes to these central conventions should be adoptable across projects through
-explicit, versioned, selective updates. A future read-only inspection command
-should report missing configuration, installed starter version, differences from
+explicit, versioned, selective updates. The read-only inspection command
+reports missing configuration, installed starter version, differences from
 the selected conventions and recognized project overrides. It should recommend
 initialization for a new destination or adoption for an existing project, without
 silently choosing or applying either. File/configuration checks cannot certify
@@ -55,8 +55,8 @@ must be independently selectable, preview changes, preserve project modification
 and report conflicts. No background updates or mandatory session-start checks.
 
 Delivery boundary: v3.0.0 provides initialization, adoption, scoped guidance updates
-and pinned skill installation. Unified inspection, upstream freshness reporting
-and automated skill upgrades are follow-up work, not shipped capabilities.
+and pinned skill installation. Read-only local inspection is implemented after that tagged baseline. Upstream
+freshness reporting and automated skill upgrades remain follow-up work.
 
 Rebuild `https://github.com/ZekeT/agentic-setup` in the same Git repository around Matt Pocock's development workflow. Add selected Pstack guidance and capabilities, HumanLayer show-me explanations, simple onboarding, and configurable Git conventions. Preserve the existing implementation with an annotated local tag before destructive changes.
 
