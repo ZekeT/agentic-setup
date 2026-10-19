@@ -1,6 +1,6 @@
 # Explicit skill freshness check
 
-Status: in progress
+Status: implemented and reviewed locally; ready for PR
 
 ## Problem Statement
 
