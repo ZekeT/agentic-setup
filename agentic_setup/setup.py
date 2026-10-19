@@ -6,6 +6,7 @@ from pathlib import Path
 
 from .adopt import SOURCE, add_payload, metadata_directory
 from .files import Plan, baseline, checked_root, encoded, git, write_files
+from .templates import TemplateStatus, compare_template
 
 SCOPES = {
     "explanation": "docs/agents/explanation.md",
@@ -67,19 +68,16 @@ def plan_update(target: Path, scope: str, source_ref: str) -> Plan:
     template_baseline = prior.encode()
     if incoming == template_baseline:
         return plan
-    if local == incoming:
-        pass
-    elif local == template_baseline:
-        plan.change(name, incoming, f"explicit {scope} update from {source_ref}")
-    elif local is not None and local.count(template_baseline) == 1:
+    comparison = compare_template(local, template_baseline, incoming)
+    if comparison.replacement is not None:
         plan.change(
             name,
-            local.replace(template_baseline, incoming, 1),
-            "update intact template, preserve surrounding project additions",
+            comparison.replacement,
+            f"explicit {scope} update from {source_ref}; {comparison.status.value}",
         )
-    else:
+    elif comparison.status != TemplateStatus.CURRENT:
         plan.conflicts.append(
-            f"{name}: template and project both changed; manually merge the displayed upstream version"
+            f"{name}: {comparison.status.value}; manually reconcile before updating"
         )
         return plan
     record["files"][name] = incoming.decode()

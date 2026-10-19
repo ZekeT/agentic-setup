@@ -9,6 +9,7 @@ from .adopt import REGION, SOURCE, metadata_directory
 from .discovery import native_commands, standards
 from .files import Plan, checked_root, digest, git, path_at
 from .skills import BUNDLES, skill_locations
+from .templates import compare_template
 
 
 def record_at(plan: Plan, name: str) -> dict[str, Any]:
@@ -35,29 +36,9 @@ def convention_report(plan: Plan, record: dict[str, Any]) -> list[str]:
             continue
         name = source.relative_to(SOURCE / "payload").as_posix()
         local = plan.inspect(name)
-        if local is None:
-            status = "missing"
-        elif name not in files:
-            status = "project-owned; no installed baseline"
-        else:
-            incoming = source.read_bytes()
-            previous = files[name].encode()
-            intact = bool(previous) and local.count(previous) == 1
-            if local == incoming:
-                status = "current"
-            elif previous == incoming:
-                status = (
-                    "local additions; template unchanged"
-                    if intact
-                    else "local edits; template unchanged"
-                )
-            elif local == previous:
-                status = "update available"
-            elif intact:
-                status = "update available; local additions preserved"
-            else:
-                status = "conflict; template and project both changed"
-        lines.append(f"  {status}: {name}")
+        previous = files[name].encode() if name in files else None
+        comparison = compare_template(local, previous, source.read_bytes())
+        lines.append(f"  {comparison.status.value}: {name}")
     existing = standards(plan)
     lines.append(
         "Standards found: " + (", ".join(existing) or "none in inspected locations")
