@@ -2,8 +2,8 @@
 """PostToolUse hook — block secrets from being written to any file.
 
 Triggered by: Write, Edit, MultiEdit tool calls.
-Purpose: Defense-in-depth first layer. The Security Reviewer agent
-         catches indirect exposure during formal review — keep both.
+Purpose: Defense-in-depth secret detection during editing.
+         Separate security assessment is user-invoked.
 Source: Agentic Engineering guide (Layer 4: Deterministic Hooks)
 
 exit 1 → block the tool call and show the pattern that matched.

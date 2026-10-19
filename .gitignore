@@ -59,5 +59,4 @@ Thumbs.db
 .env.*
 !.env.template
 /.claude/skills/*
-!/.claude/skills/migrate-from-openspec/
 # engineering:integration:end

@@ -1,16 +1,11 @@
-## What changed and why
+## Summary
 
-<!-- State the concrete behavior change and link the agreed request/ticket/spec. -->
+<!-- Explain the behavior change with a useful sketch and one concrete example. -->
 
-## Verification
+## Evidence
 
-- [ ] `make check` passes
-- Independent maintainability review:
-- Independent behavioral verification:
-- Review tier (declared, floor) and security review when sensitive:
-- Relevant tests and observed outcomes:
-- Not covered:
+<!-- Actual native checks and application observations, plus remaining gaps. -->
 
-## Risk and migration
+## Merge Danger
 
-<!-- What could break, compatibility changes, and recovery steps. -->
+<!-- Tradeoffs, compatibility, and scoped recovery. -->

@@ -1,3 +1,6 @@
+> Historical ADR: superseded for the rebuilt starter by [product direction](../product-direction.md).
+> Retained for rationale; not active workflow policy.
+
 # Review tiers and carried evidence
 
 Status: accepted (2026-09-28)
