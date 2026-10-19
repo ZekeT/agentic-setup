@@ -47,8 +47,9 @@ def test_cleanup_previews_then_archives_without_touching_application(tmp_path):
     assert (saved / "gitignore.before").read_text().startswith("/.engineering/")
     assert (target / ".gitignore").read_text() == ".venv/\n"
     assert (target / "app.txt").read_text() == "application\n"
-    repeat = cli(*args)
+    repeat = cli(*args, "--apply", "--expect", token)
     assert repeat.returncode == 0 and "No changes" in repeat.stdout
+    assert list(archive.iterdir()) == [saved]
 
 
 def test_cleanup_refuses_active_legacy_callers(tmp_path):
@@ -135,3 +136,87 @@ def test_failed_second_move_rolls_back_first(tmp_path, monkeypatch, capsys):
     assert (target / ".scratch/agentic-setup-adoption/spec.md").exists()
     assert (target / ".gitignore").read_text().startswith("/.engineering/")
     assert (archive / token / "manifest.json").exists()
+
+
+def test_cleanup_refuses_imports_into_archived_folders(tmp_path):
+    target = project(tmp_path)
+    (target / ".engineering/custom.md").write_text("Keep project rules")
+    for reference in [
+        "@.engineering/custom.md",
+        "[notes](.scratch/agentic-setup-adoption/spec.md)",
+    ]:
+        (target / "CLAUDE.md").write_text(reference)
+        result = cli(
+            "cleanup", target, "--adoption-notes", "--archive", tmp_path / "archive"
+        )
+        assert result.returncode != 0 and "reference" in result.stderr
+        assert (target / ".engineering/custom.md").exists()
+        assert not (tmp_path / "archive").exists()
+
+
+def test_standalone_verification_checkout_is_archived_intact(tmp_path):
+    target = project(tmp_path)
+    checkout = target / ".engineering/state/verification/old-run/checkout"
+    checkout.mkdir(parents=True)
+    run("git", "init", cwd=checkout)
+    archive = tmp_path / "archive"
+    args = ["cleanup", target, "--archive", archive]
+    preview = cli(*args)
+    assert preview.returncode == 0, preview.stderr
+    token = preview.stdout.split("PREVIEW ")[1].splitlines()[0]
+    applied = cli(*args, "--apply", "--expect", token)
+    assert applied.returncode == 0, applied.stderr
+    assert (archive / token / checkout.relative_to(target) / ".git/HEAD").is_file()
+
+
+def test_manifest_failure_rolls_back_ignore_edit_and_never_reads_secrets(
+    tmp_path, monkeypatch, capsys
+):
+    import sys
+    from pathlib import Path
+
+    from agentic_setup.cli import main
+
+    target = project(tmp_path)
+    secret = target / ".engineering/.env"
+    secret.write_text("fixture secret")
+    (target / ".gitignore").chmod(0o640)
+    archive = tmp_path / "archive"
+    args = ["agentic", "cleanup", str(target), "--archive", str(archive)]
+    original_read = Path.read_bytes
+    original_write = Path.write_bytes
+
+    def guard_read(path):
+        assert path.name != ".env", "Secret file was read"
+        return original_read(path)
+
+    def fail_manifest(path, content):
+        if path.name == "manifest.json" and b'"applied"' in content:
+            raise OSError("injected completion failure")
+        return original_write(path, content)
+
+    monkeypatch.setattr(Path, "read_bytes", guard_read)
+    monkeypatch.setattr(sys, "argv", args)
+    assert main() == 0
+    token = capsys.readouterr().out.split("PREVIEW ")[1].splitlines()[0]
+    monkeypatch.setattr(Path, "write_bytes", fail_manifest)
+    monkeypatch.setattr(sys, "argv", args + ["--apply", "--expect", token])
+    assert main() == 1
+    assert "rolled back" in capsys.readouterr().err
+    assert secret.exists()
+    assert (
+        target / ".gitignore"
+    ).read_text() == "/.engineering/state/verification/\n.venv/\n"
+    assert (target / ".gitignore").stat().st_mode & 0o777 == 0o640
+
+
+def test_linked_snapshot_repository_is_refused(tmp_path):
+    target = project(tmp_path)
+    checkout = target / ".engineering/state/verification/old-run/checkout"
+    checkout.mkdir(parents=True)
+    run("git", "init", cwd=checkout)
+    alternates = checkout / ".git/objects/info/alternates"
+    alternates.write_text("/missing/objects\n")
+    result = cli("cleanup", target, "--archive", tmp_path / "archive")
+    assert result.returncode != 0 and "Linked snapshot" in result.stderr
+    assert alternates.exists()

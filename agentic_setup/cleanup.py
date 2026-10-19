@@ -10,7 +10,7 @@ from html import escape
 from pathlib import Path
 
 from .adopt import inspect_wiring
-from .files import Plan, baseline, checked_root, digest, encoded, path_at, read
+from .files import Plan, baseline, checked_root, digest, encoded, git, path_at, read
 from .preview import STYLE, next_report, report_destination
 
 SOURCE = Path(__file__).resolve().parents[1]
@@ -27,7 +27,7 @@ def inventory(root: Path) -> dict[str, int | str]:
     """Fingerprint metadata without opening files or following directory symlinks."""
     fingerprint = hashlib.sha256()
     device = root.lstat().st_dev
-    counts = {"files": 0, "bytes": 0, "links": 0, "directories": 0}
+    counts = {"files": 0, "bytes": 0, "links": 0, "directories": 0, "repositories": 0}
     pending = [root]
     while pending:
         path = pending.pop()
@@ -35,7 +35,31 @@ def inventory(root: Path) -> dict[str, int | str]:
         if info.st_dev != device:
             raise ValueError(f"Mount boundary refused: {path}")
         if path.name == ".git":
-            raise ValueError(f"Nested Git metadata requires separate review: {path}")
+            relative = path.relative_to(root).parts
+            snapshot = (
+                root.name == ".engineering"
+                and len(relative) == 5
+                and relative[:2] == ("state", "verification")
+                and relative[3:] == ("checkout", ".git")
+            )
+            if not snapshot or not stat.S_ISDIR(info.st_mode):
+                raise ValueError(
+                    f"Nested Git metadata requires separate review: {path}"
+                )
+            checkout = path.parent
+            common = Path(git(checkout, "rev-parse", "--git-common-dir"))
+            common = (checkout / common).resolve()
+            top = Path(git(checkout, "rev-parse", "--show-toplevel")).resolve()
+            if (
+                common != path
+                or top != checkout
+                or (path / "worktrees").exists()
+                or (path / "objects/info/alternates").exists()
+            ):
+                raise ValueError(
+                    f"Linked snapshot repository requires separate review: {path}"
+                )
+            counts["repositories"] += 1
         link = None
         if stat.S_ISLNK(info.st_mode):
             counts["links"] += 1
@@ -168,6 +192,14 @@ def plan_cleanup(target: Path, archive: Path | None, notes: bool) -> Cleanup:
     inspect_wiring(wiring)
     if wiring.conflicts:
         raise ValueError("; ".join(wiring.conflicts))
+    archived_names = [b".engineering/"]
+    if notes:
+        archived_names.append(b".scratch/agentic-setup-adoption")
+    for name, raw in wiring.observed.items():
+        if raw is not None and any(reference in raw for reference in archived_names):
+            raise ValueError(
+                f"Active reference into cleanup scope: {name}; reconcile before cleanup"
+            )
     archive = checked_root(
         archive or SOURCE / "migrations" / root.name / "cleanup-backups"
     )
@@ -215,7 +247,7 @@ def run_cleanup(
     print(f"BASELINE {plan.baseline}")
     for name, summary in plan.trees.items():
         print(
-            f"ARCHIVE {name}: {summary['files']} files, {summary['bytes']} logical bytes, {summary['links']} symlinks"
+            f"ARCHIVE {name}: {summary['files']} files, {summary['bytes']} logical bytes, {summary['links']} symlinks, {summary['repositories']} standalone snapshot repositories"
         )
     diff = "".join(
         unified_diff(
@@ -239,7 +271,7 @@ def run_cleanup(
             else report_destination(Path(html), plan.root)
         )
         rows = "".join(
-            f"<tr><td>{escape(name)}</td><td>{summary['files']} files; {summary['bytes']} logical bytes; {summary['links']} links</td><td>Moved intact to recovery archive; absent from target</td></tr>"
+            f"<tr><td>{escape(name)}</td><td>{summary['files']} files; {summary['bytes']} logical bytes; {summary['links']} links; {summary['repositories']} standalone snapshot repositories</td><td>Moved intact to recovery archive; absent from target</td></tr>"
             for name, summary in plan.trees.items()
         )
         body = f"""<!doctype html><html lang="en"><meta charset="utf-8">

@@ -294,7 +294,9 @@ HTML before applying the exact token:
 Use the same options in both commands. `--archive PATH` overrides the archive parent;
 it must be outside the target on the same filesystem. These are directory moves,
 not recursive deletion or disk-space reclamation. Symlinks move intact without
-being followed. Nested Git metadata, mount boundaries and special files are refused.
+being followed. Standalone Git repositories at the recognized legacy verification checkout path
+are archived intact. Other nested Git metadata, linked worktrees, alternates, mount
+boundaries and special files are refused.
 Stop background writers before applying: the tree token fingerprints metadata
 (including inode, size, mode, modification/change times and symlink text), not file
 contents. Secret file contents are never scanned. Ordinary failures roll back

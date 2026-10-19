@@ -107,7 +107,7 @@ The notes flag selects only `.scratch/agentic-setup-adoption`; omit it to keep t
 folder. Review the archive destination, inventory and ignore-rule diff. Stop target
 writers before approved apply with the same options and `--apply --expect TOKEN`.
 This command archives entire directories on the same filesystem without following
-symlinks or scanning file contents. It does not reclaim disk space. Nested Git
-metadata and special files require separate review. Never replace refusal with
+symlinks or scanning file contents. It does not reclaim disk space. Only standalone repositories at the recognized legacy verification checkout path
+are included; other nested Git metadata and special files require separate review. Never replace refusal with
 manual deletion. Existing uncommitted adoption edits remain untouched except the
 explicitly previewed legacy paths and ignore rules. Recovery artifacts stay here.

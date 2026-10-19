@@ -12,7 +12,8 @@ Apply requires --apply --expect TOKEN; HTML is preview-only.
 
 Archive selected directories by same-filesystem rename, never recursive deletion or
 copying through links. Preserve all bytes, modes, symlinks, ignored files and nested
-snapshot contents without reading secrets. Refuse nested Git metadata, special files,
+snapshot contents without reading secrets. Include standalone repositories only at .engineering/state/verification/<run>/checkout;
+refuse other nested Git metadata, linked repositories, special files,
 mount boundaries, symlink roots, source/target overlap and archive overlap. Inventory
 metadata (including names, modes, inode, size, modification/change times and link
 text) binds previews to current trees; this is not a content hash. Require quiescent
