@@ -1,6 +1,6 @@
 # Explicit latest skill installation and updates
 
-Status: in progress
+Status: implemented and reviewed locally; ready for PR
 
 Implement latest-on-request `agentic skills install` and `agentic skills update`.
 Default source is the selected bundle's upstream default branch. Resolve to a commit,
