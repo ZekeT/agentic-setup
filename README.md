@@ -125,7 +125,9 @@ Initialize Git and commit first for new targets. Installation copies selected sk
 files into `.claude/skills/`, recording source, commit and file hashes. Existing exposed
 skills are preserved; installation never shadows a local skill. Updates change only
 recorded bundle skills: unchanged managed files can be replaced or deleted when removed
-upstream. Locally modified/deleted files, incoming paths that overlap project additions,
+upstream, and deletions must also match the recorded upstream Git tree. If that older
+commit is unavailable (for example in a shallow offline checkout), deletion is blocked;
+provide a checkout containing that revision. Locally modified/deleted files, incoming paths that overlap project additions,
 relocated skills and duplicate names require reconciliation. Unrelated project-added
 files remain untouched. Commit affected configuration before apply; repeat updates are
 no-ops. Upstream licenses are retained by revision; old licenses are not overwritten.

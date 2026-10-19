@@ -14,7 +14,8 @@ Store source, resolved commit and installed file hashes per skill. Updates requi
 recorded ownership, canonical installed location, and unchanged managed files; report
 conflicts for edited/deleted managed files, duplicate exposed names, unowned incoming
 paths or source mismatches. Preserve unrelated skills, project-added files and target
-work. Delete only unchanged recorded files removed upstream. Preserve upstream licenses;
+work. Delete only unchanged recorded files removed upstream, with ownership independently
+verified against the recorded upstream commit. Missing history blocks deletion. Preserve upstream licenses;
 licenses are stored by resolved revision, so newer licenses never overwrite older copies. Preview never modifies the target;
 apply uses the existing content/baseline token and committed-edit checks. Reapplication
 must be a no-op. No automatic background fetching, execution of upstream scripts or

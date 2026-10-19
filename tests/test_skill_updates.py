@@ -264,3 +264,48 @@ def test_update_refuses_legacy_command_name_collision(tmp_path):
     assert result.returncode == 1
     assert "command name collision" in result.stdout
     assert snapshot(target) == before
+
+
+def test_update_does_not_delete_project_file_claimed_by_target_metadata(tmp_path):
+    import hashlib
+
+    source, skill, _ = source_repo(tmp_path)
+    target = target_repo(tmp_path)
+    apply("skills", "install", target, "--from", source, "--bundle", "show-me")
+    project_path = ".claude/skills/show-me/team.md"
+    (target / project_path).write_text("Project-owned extension\n")
+    record_path = target / ".agentic-setup/skills.json"
+    records = json.loads(record_path.read_text())
+    records["show-me"]["files"][project_path] = hashlib.sha256(
+        (target / project_path).read_bytes()
+    ).hexdigest()
+    record_path.write_text(json.dumps(records))
+    commit(target, "project file falsely claimed by metadata")
+    (skill / "old.md").unlink()
+    commit(source, "remove old upstream support")
+    before = snapshot(target)
+    result = cli("skills", "update", target, "--from", source, "--bundle", "show-me")
+    assert result.returncode == 1
+    assert "upstream ownership" in result.stdout
+    assert snapshot(target) == before
+
+
+def test_update_preserves_removed_files_when_historical_ownership_is_unavailable(
+    tmp_path,
+):
+    source, skill, _ = source_repo(tmp_path)
+    target = target_repo(tmp_path)
+    apply("skills", "install", target, "--from", source, "--bundle", "show-me")
+    commit(target, "installed skill")
+    (skill / "old.md").unlink()
+    commit(source, "upstream removed support")
+    shallow = tmp_path / "shallow"
+    cloned = run(
+        "git", "clone", "--quiet", "--depth", "1", source.as_uri(), str(shallow)
+    )
+    assert cloned.returncode == 0, cloned.stderr
+    before = snapshot(target)
+    result = cli("skills", "update", target, "--from", shallow, "--bundle", "show-me")
+    assert result.returncode == 1
+    assert "cannot verify upstream ownership" in result.stdout
+    assert snapshot(target) == before

@@ -2,6 +2,7 @@
 
 import json
 import re
+import subprocess
 from pathlib import Path
 from typing import Any
 
@@ -85,14 +86,36 @@ def installed_names(plan: Plan) -> set[str]:
     return set(locations)
 
 
-def upstream_skills(checkout: Path, selected: list[str]) -> dict[str, dict[str, bytes]]:
-    files = git(checkout, "ls-files").splitlines()
+def upstream_skills(
+    checkout: Path, selected: list[str], revision: str
+) -> dict[str, dict[str, bytes]]:
+    if not re.fullmatch(r"[0-9a-f]{40}|[0-9a-f]{64}", revision):
+        raise ValueError("Upstream revision must be a full commit hash")
+    entries = {}
+    for entry in git(checkout, "ls-tree", "-rz", revision).split("\0"):
+        if entry:
+            metadata, name = entry.split("\t", 1)
+            mode, kind, object_id = metadata.split()
+            entries[name] = (mode, kind, object_id)
+
+    def contents(name: str) -> bytes:
+        path_at(checkout, name)  # Refuse protected paths and filesystem symlinks.
+        mode, kind, object_id = entries[name]
+        if mode not in {"100644", "100755"} or kind != "blob":
+            raise ValueError(f"Unsupported upstream file type: {name}")
+        result = subprocess.run(
+            ["git", "-C", str(checkout), "cat-file", "blob", object_id],
+            capture_output=True,
+        )
+        if result.returncode:
+            raise ValueError(f"Cannot read upstream object for {name}")
+        return result.stdout
+
     candidates: dict[str, Path] = {}
-    for name in files:
+    for name in entries:
         if not name.endswith("/SKILL.md"):
             continue
-        raw = read(checkout, name)
-        match = re.search(rb'^name:\s*[\'"]?([a-z0-9-]+)', raw or b"", re.M)
+        match = re.search(rb'^name:\s*[\'"]?([a-z0-9-]+)', contents(name), re.M)
         if match and match[1].decode() in selected:
             exposed = match[1].decode()
             if exposed in candidates:
@@ -105,16 +128,13 @@ def upstream_skills(checkout: Path, selected: list[str]) -> dict[str, dict[str, 
     result: dict[str, dict[str, bytes]] = {}
     for name, directory in candidates.items():
         result[name] = {}
-        for relative in files:
+        for relative in entries:
             path = Path(relative)
             if path.is_relative_to(directory):
-                raw = read(checkout, relative)
-                if raw is None:
-                    raise ValueError(f"Missing tracked upstream file: {relative}")
                 destination = (
                     f".claude/skills/{name}/{path.relative_to(directory).as_posix()}"
                 )
-                result[name][destination] = raw
+                result[name][destination] = contents(relative)
     return result
 
 
@@ -166,7 +186,7 @@ def plan_skills(
         raise ValueError(f"Use a clean {source} checkout")
     plan = Plan(target, baseline(target))
     plan.notes.append(f"SOURCE {source}@{revision}; replay with --ref {revision}")
-    candidates = upstream_skills(checkout, selected)
+    candidates = upstream_skills(checkout, selected, revision)
     metadata = metadata_directory(plan)
     record_path = f"{metadata}/skills.json"
     records = skill_records(plan, record_path)
@@ -217,6 +237,25 @@ def plan_skills(
                     plan.conflicts.append(
                         f"{path}: incoming file overlaps unowned project content"
                     )
+            removed = previous.keys() - incoming.keys()
+            if removed:
+                try:
+                    historical = upstream_skills(checkout, [name], prior["commit"])[
+                        name
+                    ]
+                except ValueError as exc:
+                    plan.conflicts.append(
+                        f"{name}: cannot verify upstream ownership at recorded revision; use a checkout containing that commit ({exc})"
+                    )
+                else:
+                    for path in sorted(removed):
+                        if (
+                            path not in historical
+                            or digest(historical[path]) != previous[path]
+                        ):
+                            plan.conflicts.append(
+                                f"{path}: upstream ownership is not verified; preserve project content"
+                            )
             if len(plan.conflicts) != before_conflicts:
                 continue
             for path in sorted(previous.keys() | incoming.keys()):
