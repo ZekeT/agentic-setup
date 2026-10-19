@@ -281,7 +281,7 @@ def run_cleanup(
 <table><tr><th>Path</th><th>Before</th><th>After</th></tr>{rows}</table>
 <h2>Ignore rules</h2><pre>{escape(diff or "No change")}</pre>
 <h2>Recovery archive</h2><code>{escape(str(saved))}</code>
-<p>Same-filesystem moves preserve symlinks without following them. No file contents in archived trees are read. No disk space reclamation is promised.</p>
+<p>Same-filesystem moves preserve symlinks without following them. Tree inventories use filesystem metadata; Git metadata is inspected read-only to identify standalone snapshots. Application and secret file contents are not scanned. No disk space reclamation is promised.</p>
 <p>Stop target writers before applying. The token binds directory metadata, not content hashes. Unrelated local changes are preserved. No application checks run.</p>
 <h2>Preview token</h2><code>{plan.token()}</code></html>"""
         with path.open("x", encoding="utf-8") as stream:
