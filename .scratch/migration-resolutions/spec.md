@@ -1,6 +1,6 @@
 # Project-specific migration resolutions
 
-Status: in progress
+Status: implemented and reviewed locally; target preview prepared, no apply
 
 Keep reusable adoption logic separate from project decisions. Store each target's
 local artifacts in migrations/<workspace-name>/, ignored by Git. Add optional
