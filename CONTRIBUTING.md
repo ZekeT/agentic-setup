@@ -11,7 +11,8 @@ make check
 ```
 
 Only maintainers need uv, Ruff, mypy and pytest. Runtime installation uses Python
-3.11+ standard library and Git. CI runs these native checks, no evidence platform.
+3.11+ standard library and Git; skill staging/checks additionally use Node/npm.
+CI runs these native checks, no evidence platform.
 `agentic_setup/payload` is the consumer guidance; maintainer tests/history/runtime state
 are excluded. `agentic_setup/legacy.json` contains exact known historical file/section
 hashes for safe removal, not a runtime ownership manifest. The tool never trusts a
@@ -40,9 +41,13 @@ the installer itself. Actual application migration remains unverified until a us
 supplies and authorizes that repository. Simulated policy checks are not actual
 agent execution or measured application speed improvements.
 
-Selected upstream revisions, file hashes and licenses are recorded by `agentic skills
-install` and `agentic skills update`. The following are historical review references,
-not restrictions on current installations (which default to latest on explicit request).
+Skill sourcing and lock records now belong to pinned npm skills@1.7.2. Node/npm are
+needed for staging/checks; frozen apply remains Python + Git only. Public CLI tests
+use an explicit external npm process fixture for deterministic offline coverage;
+real pinned-installer journeys complement those tests. Apply tests remove the
+installer after preview and verify exact bytes, backups, rollback and stale refusal.
+Historical custom revision/ownership tests are replaced by this frozen-plan contract.
+The following revisions are historical review references, not current install pins.
 Matt 4588b32: setup, TDD, implement, code-review and pr inspected; unchanged bodies.
 HumanLayer 3c262914: show-me inspected, optional presentation.
 Pstack 6f131f13: reader load, subtraction, root causes, domain/boundary discipline,

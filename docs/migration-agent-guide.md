@@ -112,3 +112,14 @@ read-only to identify standalone snapshots. It does not reclaim disk space. Only
 are included; other nested Git metadata and special files require separate review. Never replace refusal with
 manual deletion. Existing uncommitted adoption edits remain untouched except the
 explicitly previewed legacy paths and ignore rules. Recovery artifacts stay here.
+
+## Skill transition after project migration
+
+Use `agentic skills install TARGET --bundle matt --bundle show-me --html` to prepare
+a saved external-installer plan. Review all replacements and extra-file deletions.
+Unrecorded skills are not assigned invented revision history. Apply only after
+approval with `--plan PATH --apply --expect TOKEN`; omit source options on apply.
+The plan freezes the installer output and includes original bytes for recovery.
+Never run npm skills check/update directly against the target. Agentic Setup's
+check stages upstream output outside the project and remains read-only. Preserve
+convention baselines while selected old skill records move to skills-lock.json.

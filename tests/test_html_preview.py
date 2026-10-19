@@ -63,8 +63,8 @@ def test_html_rejects_apply_and_unsafe_output_without_writes(tmp_path):
     assert snapshot(target) == before
 
 
-def test_skill_report_bounds_binary_and_large_content(tmp_path):
-    from test_skill_updates import source_repo, target_repo
+def test_skill_report_bounds_binary_and_large_content(tmp_path, installer):
+    from skill_support import source_repo, target_repo
     from test_updates import commit
 
     source, skill, _ = source_repo(tmp_path)

@@ -1,101 +1,54 @@
-"""Explicit online revision comparisons; never write into the target workspace."""
+"""Read-only comparisons: external installation runs only in disposable staging."""
 
-import re
 from pathlib import Path
 
-from .adopt import metadata_directory
-from .files import Plan, checked_root, git
-from .skills import BUNDLES, skill_locations, skill_records
-from .sources import skill_source
-
-
-def revision_status(checkout: Path, recorded: str, latest: str) -> str:
-    if recorded == latest:
-        return "current"
-    try:
-        git(checkout, "cat-file", "-e", f"{recorded}^{{commit}}")
-    except ValueError:
-        # Only a validated hash is fetched, from the configured bundle remote.
-        git(checkout, "fetch", "--quiet", "origin", recorded)
-    ancestor = git(checkout, "merge-base", recorded, latest)
-    if ancestor == recorded:
-        return "behind (upstream advanced; preview an update)"
-    if ancestor == latest:
-        return "ahead (recorded revision is newer than upstream HEAD)"
-    return "diverged (review history before updating)"
+from .files import Plan
+from .skill_stage import build_stage, target_root
+from .skills import BUNDLES, external_records, skill_locations
 
 
 def check_skills(target: Path, bundle: str | None) -> tuple[str, int]:
-    target = checked_root(target)
-    if not target.is_dir():
-        raise ValueError("Target must be an existing workspace directory")
-    plan = Plan(target, "")
-    metadata = metadata_directory(plan)
-    records = skill_records(plan, f"{metadata}/skills.json")
-    locations = skill_locations(plan)
-    selected = {
-        name: source
-        for key, (source, _, names) in BUNDLES.items()
-        if bundle is None or key == bundle
-        for name in names
-    }
-    names = records.keys() | locations.keys()
-    if bundle is not None:
-        names &= selected.keys()
+    root = target_root(target)
+    plan = Plan(root, "")
+    installed = skill_locations(plan)
+    records = external_records(plan)
+    bundles = [bundle] if bundle else list(BUNDLES)
+    supported = {n for b in bundles for n in BUNDLES[b][2]}
     lines = [
-        f"Target: {target}",
-        "Online upstream revision check; installed contents not verified.",
-        "Repository revisions do not certify skill changes or compatibility.",
+        f"Target: {root}",
+        "Read-only staged comparison; external check/update is never run in the target.",
     ]
-    pending: dict[str, list[str]] = {}
-    incomplete = False
-    for name in sorted(names):
-        record = records.get(name)
-        paths = locations.get(name, [])
-        if record is None:
-            lines.append(f"  {name}: unrecorded revision; not checked")
-            continue
-        if not paths:
-            lines.append(f"  {name}: recorded but missing")
-            incomplete = True
-        elif len(paths) > 1:
-            lines.append(f"  {name}: duplicate installed locations; reconcile")
-            incomplete = True
-        source = selected.get(name)
-        if source is None or record["source"] != source:
-            lines.append(f"  {name}: unknown source; not checked")
-            incomplete = True
-        elif not re.fullmatch(r"[0-9a-f]{40}|[0-9a-f]{64}", record["commit"]):
-            lines.append(f"  {name}: invalid recorded commit; not checked")
-            incomplete = True
-        else:
-            pending.setdefault(source, []).append(name)
-    for source, skills in pending.items():
-        try:
-            with skill_source(source, None, None) as checkout:
-                latest = git(checkout, "rev-parse", "HEAD")
-                lines.append(f"Upstream: {source}@{latest}")
-                statuses = {}
-                for name in skills:
-                    recorded = records[name]["commit"]
-                    if recorded not in statuses:
-                        try:
-                            statuses[recorded] = revision_status(
-                                checkout, recorded, latest
-                            )
-                        except ValueError:
-                            statuses[recorded] = (
-                                "unknown (recorded history unavailable or unrelated)"
-                            )
-                            incomplete = True
-                    lines.append(f"  {name}: {statuses[recorded]}; recorded {recorded}")
-        except (ValueError, OSError) as exc:
-            lines.append(f"Upstream: {source}: unavailable ({exc})")
-            lines.extend(f"  {name}: unknown; upstream check failed" for name in skills)
-            incomplete = True
-    if not pending:
-        lines.append("No supported recorded revisions to check; no upstream contacted.")
+    for name in sorted(installed.keys() - supported):
+        if bundle is None:
+            lines.append(f"  {name}: outside selected bundles; not checked")
+    if not (installed.keys() | records.keys()) & supported:
+        lines.append("No installed supported skills to compare; use skills install.")
+        return "\n".join(lines), 0
+    stage = build_stage(root, bundles, True, None, None)
+    for name in stage["names"]:
+        prefixes = (f".agents/skills/{name}", f".claude/skills/{name}")
+        before = {
+            n: v
+            for n, v in stage["before"].items()
+            if any(n == p or n.startswith(p + "/") for p in prefixes)
+        }
+        after = {
+            n: v
+            for n, v in stage["after"].items()
+            if any(n == p or n.startswith(p + "/") for p in prefixes)
+        }
+        status = (
+            "installed files/layout differ from current upstream proposal"
+            if before != after
+            else "installed files/layout match current upstream proposal"
+        )
+        record = (
+            "external record present"
+            if name in records
+            else "unrecorded; preview install to establish external records"
+        )
+        lines.append(f"  {name}: {status}; {record}")
     lines.append(
-        "Read-only: no target files changed. Use skills update to preview changes."
+        "Differences may include local customizations; this does not certify compatibility. Preview skills update/install for an HTML comparison. Target unchanged."
     )
-    return "\n".join(lines), int(incomplete)
+    return "\n".join(lines), 0

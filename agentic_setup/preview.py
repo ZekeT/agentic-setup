@@ -123,7 +123,7 @@ def comparison(before: bytes | None, after: bytes | None) -> str:
     )
 
 
-def render_preview(plan: Plan) -> str:
+def render_preview(plan: Plan, token: str | None = None) -> str:
     groups: dict[str, list[str]] = {"UPDATE": [], "ADD": [], "DELETE": []}
     for name, after in plan.changes.items():
         action = (
@@ -213,15 +213,15 @@ def render_preview(plan: Plan) -> str:
         if not note.startswith(("ADD ", "UPDATE ", "DELETE "))
     )
     parts.append('</ul><section class="panel"><h2>Preview identity</h2>')
-    parts.append(f'<p class="token"><code>{plan.token()}</code></p>')
+    parts.append(f'<p class="token"><code>{token or plan.token()}</code></p>')
     parts.append(
         "<p>Keep this report local: it may include project configuration. HTML export does not authorize applying changes.</p></section></body></html>"
     )
     return "".join(parts)
 
 
-def write_preview(plan: Plan, destination: Path) -> None:
+def write_preview(plan: Plan, destination: Path, token: str | None = None) -> None:
     destination = report_destination(destination, plan.root)
-    rendered = render_preview(plan)
+    rendered = render_preview(plan, token)
     with destination.open("x", encoding="utf-8") as output:
         output.write(rendered)

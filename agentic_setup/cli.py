@@ -8,13 +8,12 @@ from pathlib import Path
 
 from .adopt import plan_adoption
 from .cleanup import run_cleanup
-from .files import baseline, checked_root
 from .freshness import check_skills
 from .inspection import inspect_target
 from .preview import next_report, report_destination, write_preview
 from .setup import SCOPES, initialize, plan_update
-from .skills import BUNDLES, plan_skills
-from .sources import skill_source
+from .skill_stage import run_skills
+from .skills import BUNDLES
 
 
 def main() -> int:
@@ -88,7 +87,12 @@ def main() -> int:
             "--ref",
             help="full upstream commit hash; defaults to latest default-branch HEAD",
         )
-        skills.add_argument("--bundle", choices=BUNDLES, default="matt")
+        skills.add_argument("--bundle", choices=BUNDLES, action="append")
+        skills.add_argument(
+            "--plan",
+            type=Path,
+            help="saved proposal: output during preview, input during apply",
+        )
         skills.add_argument(
             "--html",
             nargs="?",
@@ -130,14 +134,17 @@ def main() -> int:
         if args.command == "adopt":
             plan = plan_adoption(args.target, args.minimal, args.resolutions)
         elif args.command == "skills":
-            target = checked_root(args.target)
-            baseline(target)  # Reject invalid targets before any network activity.
-            with skill_source(
-                BUNDLES[args.bundle][0], args.checkout, args.ref
-            ) as checkout:
-                plan = plan_skills(
-                    target, checkout, args.bundle, update=args.skill_command == "update"
-                )
+            return run_skills(
+                args.target,
+                args.skill_command,
+                args.bundle,
+                args.checkout,
+                args.ref,
+                args.plan,
+                html_path,
+                args.apply,
+                args.expect,
+            )
         else:
             plan = plan_update(args.target, args.only, args.source_ref)
         for note in plan.notes:

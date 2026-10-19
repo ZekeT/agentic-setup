@@ -102,3 +102,9 @@ legacy folders. Its recovery directory is `cleanup-backups/<token>/`, separate f
 file-resolution backups. Use the same optional `--archive PATH` for preview and apply.
 Cleanup reports use the ordinary numbered preview files. No archive is created until
 apply. Do not use a design-only cleanup report as an executable preview token.
+
+Skill previews save `skills-NNN.json` alongside numbered HTML reports. These plans
+contain frozen before/after skill bytes, modes and supported canonical aliases.
+After approval, `agentic skills install/update TARGET --plan PATH --apply --expect TOKEN`
+uses only the saved proposal. Originals are retained under `backups/<token>/before/`.
+Keep the plan and recovery local; neither belongs in this source repository.

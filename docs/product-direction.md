@@ -46,19 +46,26 @@ silently choosing or applying either. File/configuration checks cannot certify
 qualitative adherence in application code; use the project's native checks and
 advisory review for that assessment.
 
-Inspection should also report installed upstream skill revisions, whether they
-match the starter's selected pins, and, on an explicitly requested online check,
-whether newer upstream revisions exist. Distinguish a newer upstream revision
-from a version selected and tested by the starter. Guidance and skill updates
-must be independently selectable, preview changes, preserve project modifications
-and report conflicts. No background updates or mandatory session-start checks.
+Inspection reports project-local skill locations and external lock records, retaining
+legacy revision information until those skills are explicitly migrated. Skills are
+managed by the existing npm skills CLI; Agentic Setup owns staging, review and the
+safe target-write boundary. Guidance updates remain independently selectable.
 
-Delivery boundary: v3.0.0 provides initialization, adoption, scoped guidance updates
-and pinned skill installation. Read-only local inspection is implemented after that tagged baseline. Upstream
-freshness reporting is available through the explicit read-only `agentic skills check` command. Explicit skill installation/updates now
-resolve latest on request, support exact commit replay, and record file baselines.
-Updates preserve local modifications and require verification of older commit-only
-records before taking ownership. Historical reference pins are not installation restrictions.
+The accepted 20 October 2026 integration delegates installation to skills@1.7.2 in
+an external temporary workspace. A saved plan freezes before/after bytes, modes and
+canonical Claude aliases. Apply rechecks the target and uses only that approved
+output, without fetching. Selected legacy skill records retire into skills-lock.json;
+convention baselines remain in .agentic-setup/install.json. This replaces our custom
+skill revision/ownership updater. Explicit installation may replace old unrecorded
+skills only after the human reviews the full content/deletion diff; no revision
+history is inferred and no local merge is promised.
+
+Read-only `agentic skills check` compares installed content/layout with staged
+upstream output. Do not delegate it to npm's check/update against the live target:
+version 1.7.2 aliases check to mutation. Matching contents do not certify behavior
+or compatibility. There are no background checks. v3.0.0's immutable published
+behavior and historical reference pins remain historical; current previews select
+latest upstream unless an explicit source/ref is supplied.
 
 Rebuild `https://github.com/ZekeT/agentic-setup` in the same Git repository around Matt Pocock's development workflow. Add selected Pstack guidance and capabilities, HumanLayer show-me explanations, simple onboarding, and configurable Git conventions. Preserve the existing implementation with an annotated local tag before destructive changes.
 
@@ -158,7 +165,7 @@ The minimal path does not rename application modules, reformat the whole reposit
 
 After the minimal transition, the application uses a known installed version and continues normal development while the starter changes. No per-session update check, remote source fetch, mandatory upgrade, or application-time digest validation is allowed.
 
-Keep a small version/source record for installed starter additions and selected upstream skill pins. A compact file list or original template baseline is acceptable if necessary to safely update generated files; it must serve installation only and must not recreate the old runtime ownership model.
+Keep a small convention baseline record for installed starter additions; let the external installer own skill source/content records. A compact file list or original template baseline is acceptable if necessary to safely update generated files; it must serve installation only and must not recreate the old runtime ownership model.
 
 Provide an explicit external update path with preview and apply, pinned to a known starter release or commit. Allow scoped changes, such as just the explanation guidance or an optional review skill, without forcing adoption of unrelated features or new application dependencies. Group genuinely dependent changes as one coherent update and disclose the dependency.
 

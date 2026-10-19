@@ -1,13 +1,12 @@
-"""Plan explicit skill installs and conservative updates from a resolved source."""
+"""Selected skill bundles and read-only installation discovery."""
 
 import json
+import os
 import re
-import subprocess
-from pathlib import Path
 from typing import Any
 
-from .adopt import metadata_directory
-from .files import Plan, baseline, checked_root, digest, encoded, git, path_at, read
+from .files import Plan, path_at
+from .skill_files import alias_target
 
 BUNDLES = {
     "matt": (
@@ -64,6 +63,13 @@ def skill_locations(plan: Plan) -> dict[str, list[str]]:
             continue
         for child in sorted(directory.iterdir()):
             relative = child.relative_to(plan.root).as_posix()
+            if child.is_symlink():
+                if os.readlink(child) != alias_target(relative):
+                    raise ValueError(f"Symlink refused: {relative}")
+                canonical = path_at(plan.root, f".agents/skills/{child.name}/SKILL.md")
+                if not canonical.is_file():
+                    raise ValueError(f"Dangling skill alias: {relative}")
+                continue
             if not path_at(plan.root, relative).is_dir():
                 continue
             skill = f"{relative}/SKILL.md"
@@ -76,259 +82,28 @@ def skill_locations(plan: Plan) -> dict[str, list[str]]:
     return locations
 
 
-def installed_names(plan: Plan) -> set[str]:
-    locations = skill_locations(plan)
-    for name, paths in locations.items():
-        if len(paths) > 1:
-            plan.conflicts.append(
-                f"{', '.join(paths)}: duplicate existing exposed name {name}"
+def external_records(plan: Plan) -> dict[str, Any]:
+    raw = plan.inspect("skills-lock.json")
+    if raw is None:
+        return {}
+    value = json.loads(raw)
+    if (
+        not isinstance(value, dict)
+        or set(value) != {"version", "skills"}
+        or type(value["version"]) is not int
+        or value["version"] != 1
+        or not isinstance(value["skills"], dict)
+    ):
+        raise ValueError("Unsupported skills-lock.json; expected version 1")
+    for name, entry in value["skills"].items():
+        if (
+            not re.fullmatch(r"[a-z0-9][a-z0-9-]*", name)
+            or not isinstance(entry, dict)
+            or not all(
+                isinstance(entry.get(key), str)
+                for key in ("source", "sourceType", "computedHash")
             )
-    return set(locations)
-
-
-def upstream_skills(
-    checkout: Path, selected: list[str], revision: str
-) -> dict[str, dict[str, bytes]]:
-    if not re.fullmatch(r"[0-9a-f]{40}|[0-9a-f]{64}", revision):
-        raise ValueError("Upstream revision must be a full commit hash")
-    entries = {}
-    for entry in git(checkout, "ls-tree", "-rz", revision).split("\0"):
-        if entry:
-            metadata, name = entry.split("\t", 1)
-            mode, kind, object_id = metadata.split()
-            entries[name] = (mode, kind, object_id)
-
-    def contents(name: str) -> bytes:
-        path_at(checkout, name)  # Refuse protected paths and filesystem symlinks.
-        mode, kind, object_id = entries[name]
-        if mode not in {"100644", "100755"} or kind != "blob":
-            raise ValueError(f"Unsupported upstream file type: {name}")
-        result = subprocess.run(
-            ["git", "-C", str(checkout), "cat-file", "blob", object_id],
-            capture_output=True,
-        )
-        if result.returncode:
-            raise ValueError(f"Cannot read upstream object for {name}")
-        return result.stdout
-
-    candidates: dict[str, Path] = {}
-    for name in entries:
-        if not name.endswith("/SKILL.md"):
-            continue
-        match = re.search(rb'^name:\s*[\'"]?([a-z0-9-]+)', contents(name), re.M)
-        if match and match[1].decode() in selected:
-            exposed = match[1].decode()
-            if exposed in candidates:
-                raise ValueError(f"Duplicate upstream skill name: {exposed}")
-            candidates[exposed] = Path(name).parent
-    if set(candidates) != set(selected):
-        raise ValueError(
-            f"Missing upstream skills: {sorted(set(selected) - set(candidates))}; review the bundle selection"
-        )
-    result: dict[str, dict[str, bytes]] = {}
-    for name, directory in candidates.items():
-        result[name] = {}
-        for relative in entries:
-            path = Path(relative)
-            if path.is_relative_to(directory):
-                destination = (
-                    f".claude/skills/{name}/{path.relative_to(directory).as_posix()}"
-                )
-                result[name][destination] = contents(relative)
-    return result
-
-
-def skill_records(plan: Plan, path: str) -> dict[str, Any]:
-    records = json.loads(plan.inspect(path) or b"{}")
-    if not isinstance(records, dict):
-        raise ValueError("Skill metadata must be an object")
-    for name, record in records.items():
-        if not isinstance(record, dict) or not all(
-            isinstance(record.get(key), str) for key in ("source", "commit")
+            or not re.fullmatch(r"[0-9a-f]{64}", entry["computedHash"])
         ):
-            raise ValueError(f"Invalid skill record: {name}")
-    return records
-
-
-def owned_files(record: dict[str, Any], name: str) -> dict[str, str] | None:
-    files = record.get("files")
-    if files is None:
-        return None
-    if (
-        not isinstance(files, dict)
-        or not files
-        or not all(
-            isinstance(path, str)
-            and path.startswith(f".claude/skills/{name}/")
-            and isinstance(value, str)
-            and re.fullmatch(r"[0-9a-f]{64}", value)
-            for path, value in files.items()
-        )
-        or f".claude/skills/{name}/SKILL.md" not in files
-    ):
-        raise ValueError(f"Invalid owned file hashes for skill {name}")
-    return files
-
-
-def plan_skills(
-    target: Path, checkout: Path, bundle: str, *, update: bool = False
-) -> Plan:
-    source, _, selected = BUNDLES[bundle]
-    target, checkout = checked_root(target), checked_root(checkout)
-    if (
-        target == checkout
-        or target.is_relative_to(checkout)
-        or checkout.is_relative_to(target)
-    ):
-        raise ValueError("Skill source must be outside the target workspace")
-    revision = git(checkout, "rev-parse", "HEAD")
-    if git(checkout, "status", "--porcelain"):
-        raise ValueError(f"Use a clean {source} checkout")
-    plan = Plan(target, baseline(target))
-    plan.notes.append(f"SOURCE {source}@{revision}; replay with --ref {revision}")
-    candidates = upstream_skills(checkout, selected, revision)
-    metadata = metadata_directory(plan)
-    record_path = f"{metadata}/skills.json"
-    records = skill_records(plan, record_path)
-    existing = installed_names(plan)
-    managed = False
-    license_directory = f"{metadata}/licenses/{bundle}/{revision}"
-    for name, incoming in candidates.items():
-        prior = records.get(name)
-        canonical = f".claude/skills/{name}/SKILL.md"
-        exposed = (
-            name in existing or plan.inspect(f".claude/commands/{name}.md") is not None
-        )
-        if update:
-            if plan.inspect(f".claude/commands/{name}.md") is not None:
-                plan.conflicts.append(
-                    f"{name}: command name collision; reconcile before updating"
-                )
-                continue
-            if prior is None:
-                plan.notes.append(
-                    f"PRESERVE skill {name}: no installation record; install separately"
-                )
-                continue
-            if prior["source"] != source:
-                plan.conflicts.append(
-                    f"{name}: recorded source differs from selected bundle"
-                )
-                continue
-            previous = owned_files(prior, name)
-            if previous is None:
-                plan.conflicts.append(
-                    f"{name}: no file baseline; first preview skills install --bundle {bundle} --ref {prior['commit']} to verify the recorded revision (or use that clean --from checkout)"
-                )
-                continue
-            if name not in existing or plan.inspect(canonical) is None:
-                plan.conflicts.append(
-                    f"{name}: recorded skill is missing or relocated; reconcile manually"
-                )
-                continue
-            before_conflicts = len(plan.conflicts)
-            for path, expected in previous.items():
-                if digest(plan.inspect(path)) != expected:
-                    plan.conflicts.append(
-                        f"{path}: locally modified or deleted; preserve and reconcile manually"
-                    )
-            for path in incoming.keys() - previous.keys():
-                if plan.inspect(path) is not None:
-                    plan.conflicts.append(
-                        f"{path}: incoming file overlaps unowned project content"
-                    )
-            removed = previous.keys() - incoming.keys()
-            if removed:
-                try:
-                    historical = upstream_skills(checkout, [name], prior["commit"])[
-                        name
-                    ]
-                except ValueError as exc:
-                    plan.conflicts.append(
-                        f"{name}: cannot verify upstream ownership at recorded revision; use a checkout containing that commit ({exc})"
-                    )
-                else:
-                    for path in sorted(removed):
-                        if (
-                            path not in historical
-                            or digest(historical[path]) != previous[path]
-                        ):
-                            plan.conflicts.append(
-                                f"{path}: upstream ownership is not verified; preserve project content"
-                            )
-            if len(plan.conflicts) != before_conflicts:
-                continue
-            for path in sorted(previous.keys() | incoming.keys()):
-                plan.change(
-                    path,
-                    incoming.get(path),
-                    f"explicit skill update from {source}@{revision}",
-                )
-        elif exposed:
-            # Commit-only records can gain ownership only after exact byte verification.
-            if (
-                prior is None
-                or prior["source"] != source
-                or prior["commit"] != revision
-                or prior.get("files") is not None
-            ):
-                plan.notes.append(
-                    f"PRESERVE skill {name}: already exposed; use an explicit update, never shadow it"
-                )
-                continue
-            if any(plan.inspect(path) != raw for path, raw in incoming.items()):
-                plan.conflicts.append(
-                    f"{name}: installed files differ from recorded revision; cannot establish a file baseline"
-                )
-                continue
-            plan.notes.append(
-                f"BASELINE {name}: verified installed bytes at recorded revision"
-            )
-        else:
-            if prior is not None:
-                plan.conflicts.append(
-                    f"{name}: recorded installation is missing; reconcile before reinstalling"
-                )
-                continue
-            for path, raw in incoming.items():
-                if plan.inspect(path) is not None:
-                    plan.conflicts.append(
-                        f"{path}: partial existing skill; inspect before installing"
-                    )
-                else:
-                    plan.change(path, raw, f"unmodified {source}@{revision}")
-        records[name] = {
-            **(prior or {}),
-            "source": source,
-            "commit": revision,
-            "files": {path: digest(raw) for path, raw in incoming.items()},
-            "license_directory": license_directory,
-        }
-        managed = True
-    if managed:
-        tracked = set(git(checkout, "ls-files").splitlines())
-        for name in ("LICENSE", "LICENSE.md", "LICENSE.txt"):
-            license_bytes = read(checkout, name) if name in tracked else None
-            if license_bytes is not None:
-                destination = f"{license_directory}/{name}"
-                before = plan.inspect(destination)
-                if before is not None and before != license_bytes:
-                    plan.conflicts.append(f"{destination}: customized license file")
-                else:
-                    plan.change(
-                        destination,
-                        license_bytes,
-                        "retain license for this upstream revision",
-                    )
-        plan.change(
-            record_path,
-            encoded(records),
-            "record installed revisions and owned file hashes",
-        )
-    if git(checkout, "rev-parse", "HEAD") != revision or git(
-        checkout, "status", "--porcelain"
-    ):
-        raise ValueError(
-            "Skill source changed while planning; preview again from a clean checkout"
-        )
-    return plan
+            raise ValueError(f"Invalid external skill record: {name}")
+    return value["skills"]
