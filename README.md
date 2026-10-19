@@ -52,6 +52,26 @@ From this external Agentic Setup checkout, against a committed Git project:
 ./agentic adopt /path/to/project --minimal --apply --expect TOKEN
 ```
 
+For a readable before/after report, add `--html` with a new filename outside the
+target workspace:
+
+```bash
+./agentic adopt /path/to/project --minimal --html /tmp/adoption-preview.html
+```
+
+Open the saved HTML locally. It shows conflicts first, change counts, preservation
+notes and expandable side-by-side file comparisons. Blocked previews still save a
+report and return exit 1; the proposed changes remain unapplied. Binary and large
+files show byte counts and hashes instead of a content diff. The report embeds no
+scripts or external resources, but may contain project configuration; keep it local.
+
+`--html` also works with `agentic update` and `agentic skills install/update` previews.
+It cannot be combined with `--apply`; existing output files and paths inside the
+target are refused. Choose a new filename for each preview. Resolve conflicts by
+refining Agentic Setup here and previewing again. For live target workspaces, only
+an explicitly approved Agentic Setup apply operation should make changes; do not
+edit target files or run target-mutating commands as a preview workaround.
+
 Use the `PREVIEW` token from the first command. Preview reads configuration only;
 it does not install dependencies or modify the target. Apply rejects stale content
 and affected uncommitted files, while preserving unrelated staged/unstaged work.

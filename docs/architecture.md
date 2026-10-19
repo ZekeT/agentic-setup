@@ -55,3 +55,9 @@ by configured bundle source, compares Git ancestry and reports partial failures.
 metadata supplies recorded hashes only, never remote URLs. It does not verify installed
 contents or certify compatibility; `inspect` remains offline and `skills update` previews
 actual file changes separately.
+
+HTML previews render the already-computed plan, including its observed before bytes,
+proposed after bytes, conflicts and token. Rendering reads no additional target files
+and never modifies the plan. Reports are standalone local files outside the target;
+export rejects apply mode and existing output paths. Large/binary contents have explicit
+hash/size summaries; all project text is escaped and no remote assets or scripts load.

@@ -64,6 +64,16 @@ Rebuild `https://github.com/ZekeT/agentic-setup` in the same Git repository arou
 
 The immediate priority is an ongoing large project already using an older Agentic Starter. Its development has become slow because of the starter's overhead. Deliver a minimal, reversible transition that removes that overhead without refactoring the application or waiting for the whole rebuild. Then continue improving the starter through explicit, selective upgrades that the application can adopt when ready.
 
+### Live target preview boundary
+
+Refine the setup tool from preview feedback until the proposed transition is ready.
+For live target workspaces, modifications must go through explicit Agentic Setup
+commands after the user approves the preview. Do not manually edit/delete target
+files, switch target branches, commit target changes or run other target-mutating
+commands as an adoption workaround. Disposable test fixtures remain available for
+implementation and verification. `--html PATH` exports reviewable before/after
+previews outside the target, including blocked plans; it never applies changes.
+
 ## 1. Scope and authorization
 
 Implement this handover locally in the starter repository on a dedicated rebuild branch. Creating the preservation tag and making scoped implementation commits are authorized. Preserve unrelated work. Remote pushes, release publication, PR creation, merges, and modifications to an external application require their own user instruction. Build and test the external migration capability using fixtures or an authorized disposable copy; do not guess which repository is the user's large project.

@@ -10,6 +10,7 @@ from .adopt import plan_adoption
 from .files import baseline, checked_root
 from .freshness import check_skills
 from .inspection import inspect_target
+from .preview import report_destination, write_preview
 from .setup import SCOPES, initialize, plan_update
 from .skills import BUNDLES, plan_skills
 from .sources import skill_source
@@ -28,6 +29,9 @@ def main() -> int:
     adopt = commands.add_parser("adopt")
     adopt.add_argument("target", type=Path)
     adopt.add_argument("--minimal", action="store_true")
+    adopt.add_argument(
+        "--html", type=Path, help="save a preview report outside the target"
+    )
     adopt.add_argument("--apply", action="store_true")
     adopt.add_argument(
         "--check", help="explicit native command to run before and after apply"
@@ -41,6 +45,9 @@ def main() -> int:
     update = commands.add_parser("update")
     update.add_argument("target", type=Path)
     update.add_argument("--only", choices=SCOPES, required=True)
+    update.add_argument(
+        "--html", type=Path, help="save a preview report outside the target"
+    )
     update.add_argument("--source-ref", required=True)
     update.add_argument("--apply", action="store_true")
     update.add_argument("--expect")
@@ -65,10 +72,18 @@ def main() -> int:
             help="full upstream commit hash; defaults to latest default-branch HEAD",
         )
         skills.add_argument("--bundle", choices=BUNDLES, default="matt")
+        skills.add_argument(
+            "--html", type=Path, help="save a preview report outside the target"
+        )
         skills.add_argument("--apply", action="store_true")
         skills.add_argument("--expect")
     args = parser.parse_args()
     try:
+        html_path = getattr(args, "html", None)
+        if html_path is not None:
+            if args.apply:
+                raise ValueError("--html is preview-only; omit --apply")
+            html_path = report_destination(html_path, args.target)
         if args.command == "skills" and args.skill_command == "check":
             report, status = check_skills(args.target, args.bundle)
             print(report)
@@ -100,6 +115,9 @@ def main() -> int:
         for conflict in plan.conflicts:
             print(f"CONFLICT {conflict}")
         print(f"PREVIEW {plan.token()}")
+        if html_path is not None:
+            write_preview(plan, html_path)
+            print(f"HTML preview: {html_path}")
         if plan.conflicts:
             return 1
         if not plan.changes:
