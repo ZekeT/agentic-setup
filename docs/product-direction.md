@@ -25,8 +25,8 @@ metadata uses `.agentic-setup/`; published v3.0.0 `.starter/` records remain usa
 in place. Maintainer instructions live in `CONTRIBUTING.md`.
 
 Use `agentic inspect`, `agentic init`, `agentic adopt`, `agentic update` and
-`agentic skills install`. Reserve `agentic skills check` and `agentic skills update`
-for future implementations. A named **profile** can describe a bundle later, but no
+`agentic skills install` and `agentic skills update`. Reserve `agentic skills check`
+for future implementation. A named **profile** can describe a bundle later, but no
 profile mechanism is introduced now. Historical migration identifiers and immutable
 release tags keep their original names.
 
@@ -56,7 +56,10 @@ and report conflicts. No background updates or mandatory session-start checks.
 
 Delivery boundary: v3.0.0 provides initialization, adoption, scoped guidance updates
 and pinned skill installation. Read-only local inspection is implemented after that tagged baseline. Upstream
-freshness reporting and automated skill upgrades remain follow-up work.
+freshness reporting remains follow-up work. Explicit skill installation/updates now
+resolve latest on request, support exact commit replay, and record file baselines.
+Updates preserve local modifications and require verification of older commit-only
+records before taking ownership. Historical reference pins are not installation restrictions.
 
 Rebuild `https://github.com/ZekeT/agentic-setup` in the same Git repository around Matt Pocock's development workflow. Add selected Pstack guidance and capabilities, HumanLayer show-me explanations, simple onboarding, and configurable Git conventions. Preserve the existing implementation with an annotated local tag before destructive changes.
 

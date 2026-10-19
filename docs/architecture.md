@@ -41,3 +41,10 @@ exact preview. `agentic_setup/files.py` owns safe file access and rollback;
 `agentic_setup/adopt.py` recognizes legacy content and proposes guidance. The legacy hash
 catalog serves installation only. The previous implementation and its planning
 artifacts remain available at `v2.1.0`.
+
+Skill operations resolve the selected upstream in a temporary external checkout, or
+use an explicitly provided clean local checkout without fetching. The resolved commit
+and copied-file hashes make subsequent updates bounded and explicit. `--ref` replays a
+previewed revision; moving latest revisions invalidate old apply tokens. Licensing is
+retained by revision. Older commit-only records need exact-byte verification before
+new ownership baselines can be established. This is installation metadata only.

@@ -38,7 +38,9 @@ the installer itself. Actual application migration remains unverified until a us
 supplies and authorizes that repository. Simulated policy checks are not actual
 agent execution or measured application speed improvements.
 
-Selected upstream revisions and licenses are recorded by `agentic skills install`.
+Selected upstream revisions, file hashes and licenses are recorded by `agentic skills
+install` and `agentic skills update`. The following are historical review references,
+not restrictions on current installations (which default to latest on explicit request).
 Matt 4588b32: setup, TDD, implement, code-review and pr inspected; unchanged bodies.
 HumanLayer 3c262914: show-me inspected, optional presentation.
 Pstack 6f131f13: reader load, subtraction, root causes, domain/boundary discipline,

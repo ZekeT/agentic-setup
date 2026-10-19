@@ -7,9 +7,11 @@ import sys
 from pathlib import Path
 
 from .adopt import plan_adoption
+from .files import baseline, checked_root
 from .inspection import inspect_target
 from .setup import SCOPES, initialize, plan_update
 from .skills import BUNDLES, plan_skills
+from .sources import skill_source
 
 
 def main() -> int:
@@ -43,12 +45,22 @@ def main() -> int:
     update.add_argument("--expect")
     skills_group = commands.add_parser("skills")
     skill_commands = skills_group.add_subparsers(dest="skill_command", required=True)
-    skills = skill_commands.add_parser("install")
-    skills.add_argument("target", type=Path)
-    skills.add_argument("--from", dest="checkout", type=Path, required=True)
-    skills.add_argument("--bundle", choices=BUNDLES, default="matt")
-    skills.add_argument("--apply", action="store_true")
-    skills.add_argument("--expect")
+    for operation in ("install", "update"):
+        skills = skill_commands.add_parser(operation)
+        skills.add_argument("target", type=Path)
+        skills.add_argument(
+            "--from",
+            dest="checkout",
+            type=Path,
+            help="explicit clean local checkout; no fetching",
+        )
+        skills.add_argument(
+            "--ref",
+            help="full upstream commit hash; defaults to latest default-branch HEAD",
+        )
+        skills.add_argument("--bundle", choices=BUNDLES, default="matt")
+        skills.add_argument("--apply", action="store_true")
+        skills.add_argument("--expect")
     args = parser.parse_args()
     try:
         if args.command == "inspect":
@@ -63,7 +75,14 @@ def main() -> int:
         if args.command == "adopt":
             plan = plan_adoption(args.target, args.minimal)
         elif args.command == "skills":
-            plan = plan_skills(args.target, args.checkout, args.bundle)
+            target = checked_root(args.target)
+            baseline(target)  # Reject invalid targets before any network activity.
+            with skill_source(
+                BUNDLES[args.bundle][0], args.checkout, args.ref
+            ) as checkout:
+                plan = plan_skills(
+                    target, checkout, args.bundle, update=args.skill_command == "update"
+                )
         else:
             plan = plan_update(args.target, args.only, args.source_ref)
         for note in plan.notes:
