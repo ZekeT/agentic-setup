@@ -272,3 +272,32 @@ The skill installation command is `agentic skills install`; `agentic inspect` re
 local setup and recorded revisions. `agentic skills update` previews explicit upgrades.
 `agentic skills check` explicitly compares recorded revisions with upstream. Development conventions is the term for shared workflow, Git
 preferences, standards and configuration; no profile abstraction is introduced.
+
+### Archive leftover legacy folders
+
+After adoption, preview a bounded cleanup from this checkout:
+
+```bash
+./agentic cleanup /absolute/path/project --adoption-notes --html
+```
+
+This proposes moving `.engineering/` and, with `--adoption-notes`,
+`.scratch/agentic-setup-adoption/` into
+`migrations/<project>/cleanup-backups/<token>/`, and removes only the five known
+obsolete Engineering ignore rules. It preserves unrelated local edits. Review the
+HTML before applying the exact token:
+
+```bash
+./agentic cleanup /absolute/path/project --adoption-notes --apply --expect TOKEN
+```
+
+Use the same options in both commands. `--archive PATH` overrides the archive parent;
+it must be outside the target on the same filesystem. These are directory moves,
+not recursive deletion or disk-space reclamation. Symlinks move intact without
+being followed. Nested Git metadata, mount boundaries and special files are refused.
+Stop background writers before applying: the tree token fingerprints metadata
+(including inode, size, mode, modification/change times and symlink text), not file
+contents. Secret file contents are never scanned. Ordinary failures roll back
+completed moves; interrupted processes may require recovery using the archive's
+manifest. No automated restore command is provided. Keep the archive until recovery
+is no longer needed; do not manually restore over subsequent project changes.

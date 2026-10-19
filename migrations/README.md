@@ -96,3 +96,9 @@ existing recovery directories are never overwritten. Inspect a failed/partial at
 before retrying. Ordinary write failures still trigger the installer's in-memory rollback.
 Recovery snapshots do not automatically revert later work or change Git history.
 No restore command or automatic cleanup of snapshots is introduced here.
+
+Post-adoption `agentic cleanup TARGET --adoption-notes --html` previews archival of
+legacy folders. Its recovery directory is `cleanup-backups/<token>/`, separate from
+file-resolution backups. Use the same optional `--archive PATH` for preview and apply.
+Cleanup reports use the ordinary numbered preview files. No archive is created until
+apply. Do not use a design-only cleanup report as an executable preview token.

@@ -7,6 +7,7 @@ import sys
 from pathlib import Path
 
 from .adopt import plan_adoption
+from .cleanup import run_cleanup
 from .files import baseline, checked_root
 from .freshness import check_skills
 from .inspection import inspect_target
@@ -45,6 +46,13 @@ def main() -> int:
     adopt.add_argument(
         "--expect", help="preview token; rejects changed content or source"
     )
+    cleanup = commands.add_parser("cleanup", help="archive dormant legacy leftovers")
+    cleanup.add_argument("target", type=Path)
+    cleanup.add_argument("--adoption-notes", action="store_true")
+    cleanup.add_argument("--archive", type=Path)
+    cleanup.add_argument("--html", nargs="?", const="auto")
+    cleanup.add_argument("--apply", action="store_true")
+    cleanup.add_argument("--expect")
     init = commands.add_parser("init")
     init.add_argument("target", type=Path)
     init.add_argument("--python-seed", action="store_true")
@@ -97,6 +105,15 @@ def main() -> int:
                 raise ValueError("--html is preview-only; omit --apply")
             if html_path != "auto":
                 html_path = report_destination(Path(html_path), args.target)
+        if args.command == "cleanup":
+            return run_cleanup(
+                args.target,
+                args.archive,
+                args.adoption_notes,
+                html_path,
+                args.apply,
+                args.expect,
+            )
         if args.command == "skills" and args.skill_command == "check":
             report, status = check_skills(args.target, args.bundle)
             print(report)

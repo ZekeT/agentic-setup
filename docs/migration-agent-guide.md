@@ -99,3 +99,15 @@ and hand back to the human. Target commits, publication and merge are not part o
 this agent procedure. Keep the local artifacts; do not commit project-specific
 reports or decisions into Agentic Setup. Once the three migrations are complete,
 retain this guide as reference without adding an ongoing migration workflow.
+
+## Optional post-adoption cleanup
+
+For leftover legacy state, use `./agentic cleanup TARGET --adoption-notes --html`.
+The notes flag selects only `.scratch/agentic-setup-adoption`; omit it to keep that
+folder. Review the archive destination, inventory and ignore-rule diff. Stop target
+writers before approved apply with the same options and `--apply --expect TOKEN`.
+This command archives entire directories on the same filesystem without following
+symlinks or scanning file contents. It does not reclaim disk space. Nested Git
+metadata and special files require separate review. Never replace refusal with
+manual deletion. Existing uncommitted adoption edits remain untouched except the
+explicitly previewed legacy paths and ignore rules. Recovery artifacts stay here.
