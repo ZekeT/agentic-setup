@@ -192,7 +192,7 @@ def plan_cleanup(target: Path, archive: Path | None, notes: bool) -> Cleanup:
     inspect_wiring(wiring)
     if wiring.conflicts:
         raise ValueError("; ".join(wiring.conflicts))
-    archived_names = [b".engineering/"]
+    archived_names = [b".engineering"]
     if notes:
         archived_names.append(b".scratch/agentic-setup-adoption")
     for name, raw in wiring.observed.items():

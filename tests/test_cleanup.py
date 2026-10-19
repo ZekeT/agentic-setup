@@ -220,3 +220,13 @@ def test_linked_snapshot_repository_is_refused(tmp_path):
     result = cli("cleanup", target, "--archive", tmp_path / "archive")
     assert result.returncode != 0 and "Linked snapshot" in result.stderr
     assert alternates.exists()
+
+
+def test_cleanup_refuses_command_using_legacy_directory_itself(tmp_path):
+    target = project(tmp_path)
+    (target / "package.json").write_text(
+        '{"scripts":{"legacy":"cd .engineering && python runner.py"}}'
+    )
+    result = cli("cleanup", target, "--archive", tmp_path / "archive")
+    assert result.returncode != 0 and "reference" in result.stderr
+    assert (target / ".engineering/config.toml").exists()
