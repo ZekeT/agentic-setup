@@ -4,7 +4,7 @@ import json
 import re
 from pathlib import Path
 
-from .files import Plan, encoded, git, read
+from .files import Plan, baseline, checked_root, encoded, git, read
 
 BUNDLES = {
     "matt": (
@@ -46,13 +46,38 @@ BUNDLES = {
 }
 
 
+def installed_names(plan: Plan) -> set[str]:
+    names: set[str] = set()
+    for folder in (
+        ".claude/skills",
+        ".agents/skills",
+        ".cursor/skills",
+        ".codex/skills",
+        ".pi/skills",
+    ):
+        directory = plan.root / folder
+        if directory.is_symlink():
+            raise ValueError(f"Symlink refused: {folder}")
+        for path in sorted(directory.glob("*/SKILL.md")):
+            relative = path.relative_to(plan.root).as_posix()
+            raw = plan.inspect(relative) or b""
+            match = re.search(rb'^name:\s*[\'"]?([a-zA-Z0-9-]+)', raw, re.M)
+            name = match[1].decode().lower() if match else path.parent.name.lower()
+            if name in names:
+                plan.conflicts.append(
+                    f"{relative}: duplicate existing exposed name {name}"
+                )
+            names.add(name)
+    return names
+
+
 def plan_skills(target: Path, checkout: Path, bundle: str) -> Plan:
     source, revision, selected = BUNDLES[bundle]
     if git(checkout, "rev-parse", "HEAD") != revision or git(
         checkout, "status", "--porcelain"
     ):
         raise ValueError(f"Use a clean {source} checkout at {revision}")
-    plan = Plan(target.resolve(), git(target, "rev-parse", "HEAD"))
+    plan = Plan(checked_root(target), baseline(target))
     files = git(checkout, "ls-files").splitlines()
     candidates: dict[str, Path] = {}
     for name in files:
@@ -69,13 +94,16 @@ def plan_skills(target: Path, checkout: Path, bundle: str) -> Plan:
         raise ValueError(f"Missing upstream skills: {set(selected) - set(candidates)}")
     record_path = ".starter/skills.json"
     record = json.loads(plan.inspect(record_path) or b"{}")
+    existing_names = installed_names(plan)
     for name, directory in candidates.items():
         destinations = [
             f".claude/skills/{name}/SKILL.md",
             f".agents/skills/{name}/SKILL.md",
             f".claude/commands/{name}.md",
         ]
-        if any(plan.inspect(p) is not None for p in destinations):
+        if name in existing_names or any(
+            plan.inspect(p) is not None for p in destinations
+        ):
             plan.notes.append(
                 f"PRESERVE skill {name}: already exposed; upgrade separately, never shadow it"
             )

@@ -3,7 +3,8 @@
 A small setup for Matt Pocock's development workflow. Applications use their own
 checks and installed skills; the starter runs only when you explicitly install or
 update guidance. Python 3.11+ and Git are **installer prerequisites**, not application
-requirements. No Node, uv, Makefile or Python application stack is imposed.
+requirements. The launcher uses an available versioned Python executable when the
+system python3 is older. No Node, uv, Makefile or Python application stack is imposed.
 
 ## Move an existing starter project first
 
@@ -52,8 +53,8 @@ modes; after a process kill/power loss inspect the scoped diff against the basel
 
 Initialization refuses an existing destination. Adoption preserves existing native
 commands, package managers, standards, settings and tracker configuration. Confirm
-that reused standards are equivalent; fill `docs/agents/checks.md` with actual
-commands. Resolve conflicting old requirements before considering adoption done.
+that discovered standards cover the project’s needs. `docs/agents/checks.md` records
+discovered native command candidates as unverified until exercised. Resolve conflicting old requirements before considering adoption done.
 Commit the configuration before installing additional skills. Existing OpenSpec
 application artifacts are preserved; no OpenSpec conversion feature is included.
 

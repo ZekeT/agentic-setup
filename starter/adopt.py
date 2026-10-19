@@ -6,7 +6,8 @@ import re
 from pathlib import Path
 from typing import Any
 
-from .files import Plan, digest, encoded, git
+from .discovery import native_commands, standards
+from .files import Plan, baseline, checked_root, digest, encoded, git
 
 SOURCE = Path(__file__).resolve().parent
 RECORD = ".starter/install.json"
@@ -15,7 +16,7 @@ REGION = re.compile(
     re.S,
 )
 RETIRED = re.compile(
-    rb"engineering\s+(?:verify|publish|doctor|maintainability|migrate)|engineering-(?:check|test|evals)|/ship\b|verification ledger|review tiers|\.engineering/(?:engineering|scripts|docs|bin)|(?:factory|harness):(integration|navigation)",
+    rb"engineering\s+(?:verify|publish|doctor|maintainability|migrate)|engineering-(?:check|test|evals)|/ship\b|verification ledger|review tiers?|\.engineering/(?:engineering|scripts|docs|bin)|(?:factory|harness):(integration|navigation)",
     re.I,
 )
 NATIVE_MAKE = b"""# Native Python checks retained from the previous starter. No installer runtime.
@@ -39,6 +40,8 @@ def legacy_changes(plan: Plan) -> None:
             continue
         if name == "Makefile":
             replacement = NATIVE_MAKE
+        elif name == ".github/pull_request_template.md":
+            replacement = b"## Summary\n\n<!-- Behavior, example and useful sketch. -->\n\n## Evidence\n\n<!-- Native checks, observed results and gaps. -->\n\n## Merge Danger\n\n<!-- Tradeoffs and scoped recovery. -->\n"
         elif name == ".github/workflows/evals.yml":
             replacement = b"name: Native checks\non: [push, pull_request]\njobs:\n  checks:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - uses: astral-sh/setup-uv@v5\n      - run: uv sync --all-extras\n      - run: make check\n"
         elif name == "docs/agents/issue-tracker.md":
@@ -108,6 +111,7 @@ def active_files(root: Path) -> set[str]:
         "package.json",
         ".claude/settings.json",
         ".claude/settings.local.json",
+        ".github/pull_request_template.md",
     }
     tracked = git(
         root, "ls-files", "--cached", "--others", "--exclude-standard"
@@ -178,19 +182,22 @@ def add_payload(plan: Plan) -> None:
             )
             continue
         if name == "CODING_STANDARDS.md":
-            alternatives = [
-                "CONTRIBUTING.md",
-                "docs/coding-standards.md",
-                "docs/standards.md",
-            ]
-            existing = [p for p in alternatives if plan.inspect(p) is not None]
+            existing = standards(plan)
             if existing:
                 plan.notes.append(
-                    f"PRESERVE standards: reuse {existing[0]} (confirm equivalent coverage)"
+                    f"PRESERVE standards: reuse {', '.join(existing)}; confirm coverage during setup"
                 )
                 continue
         plan.change(name, incoming, "missing essential workflow guidance")
         files[name] = incoming.decode()
+    existing_standards = standards(plan)
+    workflow_name = "docs/agents/workflow.md"
+    if workflow_name in plan.changes and existing_standards:
+        workflow = plan.changes[workflow_name] or b""
+        workflow += (
+            "\nProject standards: " + ", ".join(existing_standards) + ".\n"
+        ).encode()
+        plan.changes[workflow_name] = workflow
     instruction = "CLAUDE.md" if plan.inspect("CLAUDE.md") is not None else "AGENTS.md"
     current = (
         plan.changes.get(instruction, plan.inspect(instruction))
@@ -205,7 +212,7 @@ def add_payload(plan: Plan) -> None:
     for name, text in {
         "docs/agents/issue-tracker.md": "# Issue tracker\n\nUse local Markdown under .scratch/<feature>/ by default. Run\n/setup-matt-pocock-skills to establish the existing tracker contract; preserve\nexisting tickets, formats and statuses. No remote issue publication is implied.\n",
         "docs/agents/domain.md": "# Domain documentation\n\nUse existing glossary and ADR locations. Run /setup-matt-pocock-skills\nto fill missing guidance; default to one GLOSSARY.md and docs/adr/.\nRead relevant context only. Unknown historical rationale remains unknown.\n",
-        "docs/agents/checks.md": "# Native checks\n\nInspect the existing package scripts, Makefile and CI before running checks.\nRecord the agreed format/lint/type/test and application verification commands\nhere. No native check was selected automatically during installation.\n",
+        "docs/agents/checks.md": native_commands(plan),
     }.items():
         if plan.inspect(name) is None:
             plan.change(
@@ -227,14 +234,14 @@ def add_payload(plan: Plan) -> None:
 
 
 def plan_adoption(target: Path, minimal: bool) -> Plan:
-    target = target.resolve()
+    target = checked_root(target)
     if (
         target == SOURCE.parent
         or target.is_relative_to(SOURCE.parent)
         or SOURCE.parent.is_relative_to(target)
     ):
         raise ValueError("Target must be outside the starter checkout")
-    plan = Plan(target, git(target, "rev-parse", "HEAD"))
+    plan = Plan(target, baseline(target))
     for old_root in (".harness", ".factory"):
         if (target / old_root).exists():
             plan.conflicts.append(

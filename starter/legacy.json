@@ -1,5 +1,4 @@
 {
-  "source": "452d825ae58ad93d3ba66befedaacc30aa20318e",
   "paths": {
     ".claude/agents/maintainability-reviewer.md": {
       "files": [
@@ -1779,6 +1778,14 @@
       ],
       "sections": {}
     },
+    ".github/pull_request_template.md": {
+      "files": [
+        "2c0c2e578fd03c443cd4d8f108d80ef90c73ae1b4680dfe5d2d535440ca96157",
+        "3f9e739affa0694cb07c04121d046b8f833189f424a31ba2f2056b96904aa33e",
+        "473f27c391fa761101ceeae82f02ff3a714a1ffc78890314a880014c0d0c435e"
+      ],
+      "sections": {}
+    },
     ".github/workflows/evals.yml": {
       "files": [
         "338694a8fd0557816e34cebb47516c800793fcaaf759444209e622d7e6e2f08a",
@@ -1971,5 +1978,6 @@
       ],
       "sections": {}
     }
-  }
+  },
+  "source": "452d825ae58ad93d3ba66befedaacc30aa20318e"
 }

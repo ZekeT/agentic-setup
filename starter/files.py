@@ -12,6 +12,22 @@ def digest(raw: bytes | None) -> str:
     return hashlib.sha256(raw if raw is not None else b"<absent>").hexdigest()
 
 
+def checked_root(root: Path) -> Path:
+    absolute = root.absolute()
+    # macOS exposes these system aliases; arbitrary user symlinks are refused.
+    aliases = {Path("/tmp"): Path("/private/tmp"), Path("/var"): Path("/private/var")}
+    for part in (absolute, *absolute.parents):
+        if part.is_symlink() and aliases.get(part) != part.resolve():
+            raise ValueError(f"Symlink refused: {part}")
+    return absolute.resolve()
+
+
+def baseline(root: Path) -> str:
+    if Path(git(root, "rev-parse", "--show-toplevel")).resolve() != root.resolve():
+        raise ValueError("Target must be the Git project root")
+    return git(root, "rev-parse", "HEAD")
+
+
 def path_at(root: Path, name: str) -> Path:
     relative = Path(name)
     if relative.is_absolute() or ".." in relative.parts or not relative.parts:
@@ -96,13 +112,22 @@ class Plan:
         for name, before in self.observed.items():
             if read(self.root, name) != before:
                 raise ValueError(f"Stale content: {name}")
+        deleted = git(
+            self.root,
+            "diff",
+            "--name-only",
+            "--diff-filter=D",
+            "HEAD",
+            "--",
+            *self.observed,
+        )
+        if deleted:
+            raise ValueError(f"Commit affected local edits before apply: {deleted}")
         # Existing changed content must be recoverable from this exact commit.
         for name in self.changes:
+            if git(self.root, "status", "--porcelain", "--", name):
+                raise ValueError(f"Commit affected local edits before apply: {name}")
             if self.observed[name] is not None:
-                if git(self.root, "status", "--porcelain", "--", name):
-                    raise ValueError(
-                        f"Commit affected local edits before apply: {name}"
-                    )
                 if not git(self.root, "ls-files", "--", name):
                     raise ValueError(
                         f"Untracked content must be preserved manually: {name}"

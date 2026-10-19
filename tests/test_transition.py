@@ -203,3 +203,60 @@ def test_native_application_work_and_revert_preserve_later_change(tmp_path):
     assert (
         run(sys.executable, "src/app.py", cwd=target).stdout == "later feature works\n"
     )
+
+
+def test_locally_deleted_tracked_guidance_is_not_recreated(tmp_path):
+    target = legacy(tmp_path)
+    (target / "CLAUDE.md").unlink()
+    preview = cli("adopt", target, "--minimal")
+    token = preview.stdout.split("PREVIEW ")[1].splitlines()[0]
+    result = cli("adopt", target, "--minimal", "--apply", "--expect", token)
+    assert result.returncode == 1
+    assert "local edits" in result.stderr
+    assert not (target / "CLAUDE.md").exists()
+
+
+def test_initialize_refuses_symlinked_parent(tmp_path):
+    real = tmp_path / "real"
+    real.mkdir()
+    link = tmp_path / "alias"
+    link.symlink_to(real, target_is_directory=True)
+    result = cli("init", link / "new-app")
+    assert result.returncode == 1
+    assert not (real / "new-app").exists()
+
+
+def test_brownfield_reuses_named_standards_and_discovers_native_scripts(tmp_path):
+    target = tmp_path / "web"
+    (target / "docs/team").mkdir(parents=True)
+    (target / "docs/team/style-guide.md").write_text(
+        "# Coding guidelines\n\nTest public behavior.\n"
+    )
+    (target / "package.json").write_text(
+        '{"scripts":{"test":"node --test","lint":"eslint ."}}\n'
+    )
+    (target / "pnpm-lock.yaml").write_text("lockfileVersion: 9\n")
+    run("git", "init", "-q", cwd=target)
+    run("git", "add", ".", cwd=target)
+    run(
+        "git",
+        "-c",
+        "user.name=Test",
+        "-c",
+        "user.email=test@example.invalid",
+        "commit",
+        "-qm",
+        "web app",
+        cwd=target,
+    )
+    preview = cli("adopt", target)
+    assert preview.returncode == 0, preview.stderr
+    token = preview.stdout.split("PREVIEW ")[1].splitlines()[0]
+    applied = cli("adopt", target, "--apply", "--expect", token)
+    assert applied.returncode == 0, applied.stderr
+    assert not (target / "CODING_STANDARDS.md").exists()
+    assert (
+        "docs/team/style-guide.md" in (target / "docs/agents/workflow.md").read_text()
+    )
+    assert "pnpm run test" in (target / "docs/agents/checks.md").read_text()
+    assert not (target / "pyproject.toml").exists()

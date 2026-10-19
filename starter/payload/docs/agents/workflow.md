@@ -32,3 +32,8 @@ authorization, sensitive data, injection, dependencies and destructive effects;
 report evidence, plausible impact and remediation. Architectural assessment is
 user-invoked and advisory; use Matt's architecture/design skill and distinguish
 observed defects from preferences. Do not auto-refactor or file remediation work.
+
+The pinned /implement asks for review before its final commit, while /code-review
+reads committed diffs. Checkpoint the intended final changes before that review,
+then review any later corrections against the same intended PR target. Keep the
+upstream skill bodies unchanged; do not add synthetic commits or a second reviewer.

@@ -5,7 +5,7 @@ import shutil
 from pathlib import Path
 
 from .adopt import RECORD, SOURCE, add_payload
-from .files import Plan, encoded, git, write_files
+from .files import Plan, baseline, checked_root, encoded, git, write_files
 
 SCOPES = {
     "explanation": "docs/agents/explanation.md",
@@ -16,6 +16,7 @@ SCOPES = {
 
 
 def initialize(target: Path, python_seed: bool) -> None:
+    target = checked_root(target)
     if target.exists() or target.is_symlink():
         raise ValueError("Initialization requires a new destination")
     if not target.parent.is_dir():
@@ -50,7 +51,7 @@ def plan_update(target: Path, scope: str, source_ref: str) -> Plan:
     name = SCOPES[scope]
     if git(SOURCE.parent, "status", "--porcelain", "--", "starter"):
         raise ValueError("Use a committed starter checkout for versioned updates")
-    plan = Plan(target.resolve(), git(target, "rev-parse", "HEAD"))
+    plan = Plan(checked_root(target), baseline(target))
     raw = plan.inspect(RECORD)
     if raw is None:
         raise ValueError("Adopt this project before selective updates")
@@ -62,17 +63,17 @@ def plan_update(target: Path, scope: str, source_ref: str) -> Plan:
         )
     local = plan.inspect(name)
     incoming = (SOURCE / "payload" / name).read_bytes()
-    baseline = prior.encode()
-    if incoming == baseline:
+    template_baseline = prior.encode()
+    if incoming == template_baseline:
         return plan
     if local == incoming:
         pass
-    elif local == baseline:
+    elif local == template_baseline:
         plan.change(name, incoming, f"explicit {scope} update from {source_ref}")
-    elif local is not None and local.count(baseline) == 1:
+    elif local is not None and local.count(template_baseline) == 1:
         plan.change(
             name,
-            local.replace(baseline, incoming, 1),
+            local.replace(template_baseline, incoming, 1),
             "update intact template, preserve surrounding project additions",
         )
     else:

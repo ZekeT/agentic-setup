@@ -3,7 +3,7 @@
 import shutil
 import sys
 
-from test_transition import ROOT, cli, run
+from test_transition import ROOT, cli, legacy, run
 
 
 def commit(root, message):
@@ -24,9 +24,12 @@ def commit(root, message):
 
 
 def test_later_selective_update_preserves_application_and_customization(tmp_path):
-    target = tmp_path / "app"
-    assert cli("init", target).returncode == 0
-    run("git", "init", "-q", cwd=target)
+    target = legacy(tmp_path)
+    preview = cli("adopt", target, "--minimal")
+    token = preview.stdout.split("PREVIEW ")[1].splitlines()[0]
+    applied = cli("adopt", target, "--minimal", "--apply", "--expect", token)
+    assert applied.returncode == 0, applied.stderr
+    commit(target, "minimal transition")
     guidance = target / "docs/agents/explanation.md"
     guidance.write_text(guidance.read_text() + "\nTeam example: invoices.\n")
     (target / "app.js").write_text('console.log("application progress");\n')
