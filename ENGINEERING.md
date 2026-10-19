@@ -16,10 +16,11 @@ are excluded. `starter/legacy.json` contains exact known historical file/section
 hashes for safe removal, not a runtime ownership manifest. The tool never trusts a
 target-provided manifest as permission to delete files.
 
-Preservation: local annotated tag archive/pre-simplification-2026-10-19 resolves to
+Preservation: annotated version tag v2.1.0 (also retained locally as
+archive/pre-simplification-2026-10-19) resolves to
 452d825ae58ad93d3ba66befedaacc30aa20318e, including the handover. Previous HEAD was
 23a40cca6c066d4edaa4ecc0e13ffd8f860eeae7. Ignored environments, secrets, caches and
-local state are excluded and untouched. The tag is local until explicitly pushed.
+local state are excluded and untouched. Tags are local until explicitly pushed. The rebuilt starter starts at v3.0.0.
 Rebuild branch: rebuild/minimal-starter. Keep normal history; no legacy source tree.
 Tests use the baseline commit (not a remotely published tag) for disposable fixtures.
 

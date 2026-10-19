@@ -6,8 +6,8 @@ The accepted spec and decisions are [the handover](../../agentic-starter-directi
 The CLI and resulting filesystem in disposable repositories are the test seams.
 No live application is available or authorized. Delivery follows the handover:
 
-1. Preservation and policy replacement: complete; archive/pre-simplification-2026-10-19
-   at 452d825ae58ad93d3ba66befedaacc30aa20318e (local only).
+1. Preservation and policy replacement: complete; v2.1.0 (alias archive/pre-simplification-2026-10-19)
+   at 452d825ae58ad93d3ba66befedaacc30aa20318e.
 2. [Minimal transition](issues/01-minimal-transition.md).
 3. [Setup and selective updates](issues/02-setup-and-updates.md).
 4. [Workflow and final review](issues/03-workflow-and-review.md).
@@ -37,6 +37,10 @@ No additional reviewer tier, evidence service or publication record was introduc
 Limitations: no live application supplied or modified; unfamiliar .factory/.harness
 layouts and customized active configuration need bounded manual reconciliation.
 Standards discovery is heuristic; native candidates require inspection/execution.
-Remote CI protections cannot be changed locally. Tags and commits remain local;
-no push, PR, promotion or merge was performed. Consumer skill upgrades/removals use
+Remote CI protections cannot be changed locally. At the initial implementation
+handoff, tags and commits were local; no push, PR, promotion or merge had occurred. Consumer skill upgrades/removals use
 reviewed scoped patches rather than automatic merges.
+
+Version naming: the user selected v2.1.0 for preservation and v3.0.0 for the rebuilt starter.
+
+The user subsequently authorized pushing v2.1.0 and v3.0.0 to origin. The descriptive archive alias stays local.

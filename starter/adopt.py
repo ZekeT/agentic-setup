@@ -167,7 +167,7 @@ def inspect_wiring(plan: Plan) -> None:
 def add_payload(plan: Plan) -> None:
     prior_raw = plan.inspect(RECORD)
     prior: dict[str, Any] = (
-        json.loads(prior_raw) if prior_raw else {"version": "4.0.0", "files": {}}
+        json.loads(prior_raw) if prior_raw else {"version": "3.0.0", "files": {}}
     )
     files = dict(prior["files"])
     for source in sorted((SOURCE / "payload").rglob("*")):
@@ -223,7 +223,7 @@ def add_payload(plan: Plan) -> None:
             files[name] = text
     record = {
         **prior,
-        "version": "4.0.0",
+        "version": "3.0.0",
         "source": "https://github.com/ZekeT/agentic-starter",
         "files": files,
     }
