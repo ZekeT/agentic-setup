@@ -52,16 +52,15 @@ From this external Agentic Setup checkout, against a committed Git project:
 ./agentic adopt /path/to/project --minimal --apply --expect TOKEN
 ```
 
-For a readable before/after report, add `--html` with a new filename outside the
-target workspace:
+For a readable before/after report, add `--html`:
 
 ```bash
-./agentic adopt /path/to/project --minimal --html migrations/adoption-preview-1.html
+./agentic adopt /path/to/project --minimal --html
 ```
 
-Run this from the Agentic Setup workspace. `migrations/` is the local reports folder;
-`/migrations/` would mean a directory at the filesystem root. Generated reports are
-ignored by Git.
+Reports are numbered under `migrations/<workspace-name>/` in this checkout.
+Supply `--html PATH` to choose an explicit new filename outside the target. Generated
+reports are ignored by Git; `/migrations/` would mean the filesystem root.
 
 Open the saved HTML locally. It shows conflicts first, change counts, preservation
 notes and expandable side-by-side file comparisons. Blocked previews still save a
@@ -71,8 +70,16 @@ scripts or external resources, but may contain project configuration; keep it lo
 
 `--html` also works with `agentic update` and `agentic skills install/update` previews.
 It cannot be combined with `--apply`; existing output files and paths inside the
-target are refused. Choose a new filename for each preview. Resolve conflicts by
-refining Agentic Setup here and previewing again. For live target workspaces, only
+target are refused. Automatic numbering keeps earlier previews. Resolve project-specific
+conflicts with an external plan, then preview again:
+
+```bash
+./agentic adopt /path/to/project --minimal --resolutions migrations/project/resolutions.json --html
+```
+
+See [resolution plans](migrations/README.md) for the JSON format, supported actions and
+recovery behavior. The file binds the target and current hashes; it is never loaded
+automatically. Saving it does not authorize apply. For live target workspaces, only
 an explicitly approved Agentic Setup apply operation should make changes; do not
 edit target files or run target-mutating commands as a preview workaround.
 

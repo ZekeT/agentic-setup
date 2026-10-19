@@ -15,7 +15,9 @@ Only maintainers need uv, Ruff, mypy and pytest. Runtime installation uses Pytho
 `agentic_setup/payload` is the consumer guidance; maintainer tests/history/runtime state
 are excluded. `agentic_setup/legacy.json` contains exact known historical file/section
 hashes for safe removal, not a runtime ownership manifest. The tool never trusts a
-target-provided manifest as permission to delete files.
+target-provided manifest as permission to delete files. Explicit user-authored resolution
+plans are separate external inputs: validate their target/path/hash constraints, bind
+them to the preview and save recovery before applying any resolved changes.
 
 Preservation: annotated version tag v2.1.0 (also retained locally as
 archive/pre-simplification-2026-10-19) resolves to

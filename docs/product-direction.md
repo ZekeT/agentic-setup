@@ -66,7 +66,10 @@ The immediate priority is an ongoing large project already using an older Agenti
 
 ### Live target preview boundary
 
-Refine the setup tool from preview feedback until the proposed transition is ready.
+Refine the setup tool from preview feedback until the proposed transition is ready. Project-specific decisions
+belong in explicit external resolution plans under migrations/<workspace-name>/,
+not hard-coded branches in the reusable tool. Plans and replacement files are
+validated against target contents and included in the reviewable preview.
 For live target workspaces, modifications must go through explicit Agentic Setup
 commands after the user approves the preview. Do not manually edit/delete target
 files, switch target branches, commit target changes or run other target-mutating

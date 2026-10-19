@@ -10,7 +10,7 @@ from .adopt import plan_adoption
 from .files import baseline, checked_root
 from .freshness import check_skills
 from .inspection import inspect_target
-from .preview import report_destination, write_preview
+from .preview import next_report, report_destination, write_preview
 from .setup import SCOPES, initialize, plan_update
 from .skills import BUNDLES, plan_skills
 from .sources import skill_source
@@ -30,7 +30,13 @@ def main() -> int:
     adopt.add_argument("target", type=Path)
     adopt.add_argument("--minimal", action="store_true")
     adopt.add_argument(
-        "--html", type=Path, help="save a preview report outside the target"
+        "--resolutions", type=Path, help="explicit external project resolution plan"
+    )
+    adopt.add_argument(
+        "--html",
+        nargs="?",
+        const="auto",
+        help="save HTML; default: migrations/<workspace>/preview-NNN.html",
     )
     adopt.add_argument("--apply", action="store_true")
     adopt.add_argument(
@@ -46,7 +52,10 @@ def main() -> int:
     update.add_argument("target", type=Path)
     update.add_argument("--only", choices=SCOPES, required=True)
     update.add_argument(
-        "--html", type=Path, help="save a preview report outside the target"
+        "--html",
+        nargs="?",
+        const="auto",
+        help="save HTML; default: migrations/<workspace>/preview-NNN.html",
     )
     update.add_argument("--source-ref", required=True)
     update.add_argument("--apply", action="store_true")
@@ -73,7 +82,10 @@ def main() -> int:
         )
         skills.add_argument("--bundle", choices=BUNDLES, default="matt")
         skills.add_argument(
-            "--html", type=Path, help="save a preview report outside the target"
+            "--html",
+            nargs="?",
+            const="auto",
+            help="save HTML; default: migrations/<workspace>/preview-NNN.html",
         )
         skills.add_argument("--apply", action="store_true")
         skills.add_argument("--expect")
@@ -83,7 +95,8 @@ def main() -> int:
         if html_path is not None:
             if args.apply:
                 raise ValueError("--html is preview-only; omit --apply")
-            html_path = report_destination(html_path, args.target)
+            if html_path != "auto":
+                html_path = report_destination(Path(html_path), args.target)
         if args.command == "skills" and args.skill_command == "check":
             report, status = check_skills(args.target, args.bundle)
             print(report)
@@ -98,7 +111,7 @@ def main() -> int:
             )
             return 0
         if args.command == "adopt":
-            plan = plan_adoption(args.target, args.minimal)
+            plan = plan_adoption(args.target, args.minimal, args.resolutions)
         elif args.command == "skills":
             target = checked_root(args.target)
             baseline(target)  # Reject invalid targets before any network activity.
@@ -116,6 +129,8 @@ def main() -> int:
             print(f"CONFLICT {conflict}")
         print(f"PREVIEW {plan.token()}")
         if html_path is not None:
+            if html_path == "auto":
+                html_path = next_report(plan.root, getattr(args, "resolutions", None))
             write_preview(plan, html_path)
             print(f"HTML preview: {html_path}")
         if plan.conflicts:

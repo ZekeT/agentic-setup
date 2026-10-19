@@ -61,3 +61,12 @@ proposed after bytes, conflicts and token. Rendering reads no additional target 
 and never modifies the plan. Reports are standalone local files outside the target;
 export rejects apply mode and existing output paths. Large/binary contents have explicit
 hash/size summaries; all project text is escaped and no remote assets or scripts load.
+
+Adoption can layer an explicit external resolution plan over its default proposals.
+Each action binds current file hashes; inputs and replacement contents participate
+in the preview token. Only successfully resolved path-specific legacy conflicts are
+replaced, then final active wiring is checked again. No project-specific choices are
+hard-coded into the installer. Resolution applies save originals outside the target
+before writes, allowing narrowly resolved ignored/local files without weakening the
+existing guard on tracked local edits. Artifacts live under migrations/<workspace-name>/;
+HTML numbering is automatic when no explicit output path is given.

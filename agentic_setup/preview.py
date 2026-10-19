@@ -29,6 +29,23 @@ a {color:#174ea6}.token {font-size:.8rem}@media(max-width:650px){body{padding:12
 """
 
 
+def next_report(target: Path, resolutions: Path | None = None) -> Path:
+    root = checked_root(target)
+    folder = (
+        checked_root(resolutions).parent
+        if resolutions is not None
+        else Path(__file__).resolve().parents[1] / "migrations" / root.name
+    )
+    folder = checked_root(folder)
+    if folder == root or folder.is_relative_to(root):
+        raise ValueError("HTML report must be outside the target workspace")
+    folder.mkdir(parents=True, exist_ok=True)
+    number = 1
+    while (folder / f"preview-{number:03}.html").exists():
+        number += 1
+    return report_destination(folder / f"preview-{number:03}.html", root)
+
+
 def report_destination(path: Path, target: Path) -> Path:
     destination, root = checked_root(path), checked_root(target)
     if destination == root or destination.is_relative_to(root):
@@ -140,8 +157,15 @@ def render_preview(plan: Plan) -> str:
         ],
         f'<div class="card"><strong>{len(plan.conflicts)}</strong>Conflicts</div></div>',
     ]
+    resolutions = [note for note in plan.notes if note.startswith("RESOLVE ")]
+    if resolutions:
+        parts.append(
+            "<h2>Project resolutions</h2><p>Explicit project decisions, included in this preview only. No target changes have been applied.</p><ul>"
+        )
+        parts.extend(f"<li>{escape(note)}</li>" for note in resolutions)
+        parts.append("</ul>")
     if plan.conflicts:
-        parts.append("<h2>Conflicts — all application is blocked</h2>")
+        parts.append("<h2>Conflicts — resolve before applying</h2>")
         for conflict in plan.conflicts:
             parts.append(f'<div class="panel blocked"><p>{escape(conflict)}</p>')
             names = [name for name in plan.observed if conflict.startswith(name + ":")]
