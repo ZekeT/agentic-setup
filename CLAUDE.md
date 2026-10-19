@@ -1,11 +1,13 @@
 # Project instructions
 
 Read README.md for the consumer workflow and ENGINEERING.md for maintainer setup.
-The accepted specification is agentic-starter-directional-change-handover.md.
+Read the relevant decisions in [product direction](docs/product-direction.md)
+when planning features. Feature specs and delivery status live in `.scratch/`.
 
 Use Matt Pocock's planning, implementation, TDD and Standards/Spec review skills.
-For this rebuild, the handover supplies the decisions, delivery order and test
-seams: the external CLI and filesystem outcomes in disposable repositories.
+The original rebuild uses the product direction’s delivery order and test seams:
+the external CLI and filesystem outcomes in disposable repositories. Subsequent
+features define their own bounded scope while respecting that product direction.
 Keep upstream skill bodies unchanged. Checkpoint the final intended changes before
 committed-diff review; review any later corrections against the same scope.
 

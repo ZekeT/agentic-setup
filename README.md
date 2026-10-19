@@ -2,7 +2,13 @@
 
 A small setup for Matt Pocock's development workflow. Applications use their own
 checks and installed skills; the starter runs only when you explicitly install or
-update guidance. Python 3.11+ and Git are **installer prerequisites**, not application
+update guidance. This repository is the setup tool's source: its `.scratch/`, docs
+and tests maintain the tool itself. Every target project owns its own docs, tracker
+and application. Only selected guidance and skills are installed; the tool's code,
+plans and history stay here. See [product direction](docs/product-direction.md)
+for the agreed scope and [architecture](docs/architecture.md) for the boundary.
+
+Python 3.11+ and Git are **installer prerequisites**, not application
 requirements. The launcher uses an available versioned Python executable when the
 system python3 is older. No Node, uv, Makefile or Python application stack is imposed.
 

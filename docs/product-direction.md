@@ -1,6 +1,19 @@
-# Agentic Starter clean rebuild and minimal adoption handover
+# Agentic Starter product direction (v3)
 
-Updated 19 October 2026. This replaces the earlier incremental-refactor handover, including its OpenSpec migration requirements.
+Accepted 19 October 2026. This is the durable product direction for v3 and subsequent
+features. Read the relevant decisions when planning changes; update them explicitly
+when an agreed product decision changes. Feature-specific scope and delivery status
+belong in this repository's `.scratch/`, not in this document.
+
+This document preserves the accepted clean-rebuild brief. Its preservation,
+authorization and delivery instructions describe that original transition; they
+are not recurring tasks or blanket authorization for future work. The v2 baseline
+is preserved at `v2.1.0`, and the rebuilt baseline at `v3.0.0`. The original
+incremental-refactor brief, including OpenSpec migration requirements, is superseded.
+
+This repository maintains the external setup tool. Each generated or adopted
+project owns its own application source, docs, tracker and development workflow.
+See [repository architecture](architecture.md) for the installation boundary.
 
 Rebuild `https://github.com/ZekeT/agentic-starter` in the same Git repository around Matt Pocock's development workflow. Add selected Pstack guidance and capabilities, HumanLayer show-me explanations, simple onboarding, and configurable Git conventions. Preserve the existing implementation with an annotated local tag before destructive changes.
 

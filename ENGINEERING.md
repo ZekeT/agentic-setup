@@ -1,6 +1,7 @@
 # Maintainer guide
 
-The accepted rebuild spec is agentic-starter-directional-change-handover.md.
+[Product direction](docs/product-direction.md) records the accepted v3 decisions
+and constraints for future features. `.scratch/` tracks work on this setup tool.
 Consumer instructions live in README.md; do not copy this checkout into an app.
 
 ```bash

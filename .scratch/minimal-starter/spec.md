@@ -2,9 +2,9 @@
 
 Status: implemented; awaiting human review
 
-The accepted spec and decisions are [the handover](../../agentic-starter-directional-change-handover.md).
+The accepted spec and decisions are [product direction](../../docs/product-direction.md).
 The CLI and resulting filesystem in disposable repositories are the test seams.
-No live application is available or authorized. Delivery follows the handover:
+No live application is available or authorized. Delivery follows the original rebuild brief:
 
 1. Preservation and policy replacement: complete; v2.1.0 (alias archive/pre-simplification-2026-10-19)
    at 452d825ae58ad93d3ba66befedaacc30aa20318e.
@@ -13,8 +13,9 @@ No live application is available or authorized. Delivery follows the handover:
 4. [Workflow and final review](issues/03-workflow-and-review.md).
 
 The archive excludes ignored environments, caches, secrets and local runtime state.
-Existing historical tickets remain unchanged; their old workflow is superseded by
-this spec, not silently marked delivered.
+Historical v2 tickets and the obsolete Phase 2 idea are preserved at `v2.1.0`
+and removed from this checkout. Their removal does not mark unfinished v2 work
+as delivered; the v3 product direction supersedes that work.
 
 ## Verification and limits
 

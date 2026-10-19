@@ -1,4 +1,4 @@
-> Historical ADR: superseded for the rebuilt starter by the directional-change handover.
+> Historical ADR: superseded for the rebuilt starter by [product direction](../product-direction.md).
 > Retained for rationale; not active workflow policy.
 
 # Review tiers and carried evidence

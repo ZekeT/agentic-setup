@@ -1,4 +1,4 @@
-> Historical ADR: superseded for the rebuilt starter by the directional-change handover.
+> Historical ADR: superseded for the rebuilt starter by [product direction](../product-direction.md).
 > Retained for rationale; not active workflow policy.
 
 # Facts and pure decisions for engineering tests
@@ -17,7 +17,7 @@ We batch Git reads first, then separate facts from decisions:
 
 The 1800-second `verify check` command timeout is unchanged. Parallel test execution is deferred until the suite is measured after batching and migration; adopting it would add a dependency and take its own sensitive-tier ticket. The working target, recorded in tickets rather than promised by the harness, is unit tests in seconds and the authoritative suite in about one to two minutes.
 
-New work follows this through the [maintainer engineering test standard](../../docs-maintainer/engineering-testing-standard.md), which Standards review applies. It is maintainer-only: consumer projects keep the distributed testing guide and the pinned upstream `/tdd` skill.
+New work follows this through the [maintainer engineering test standard](https://github.com/ZekeT/agentic-starter/blob/v2.1.0/docs-maintainer/engineering-testing-standard.md), which Standards review applies. It is maintainer-only: consumer projects keep the distributed testing guide and the pinned upstream `/tdd` skill.
 
 ## Considered options
 
