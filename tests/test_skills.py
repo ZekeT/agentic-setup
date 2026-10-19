@@ -104,3 +104,37 @@ def test_apply_requires_saved_plan_and_preview_cannot_write_inside_target(
     )
     assert result.returncode != 0
     assert not (target / "plan.json").exists()
+
+
+@pytest.mark.parametrize("name", ["support.md", "SKILL.md", "linked-directory"])
+def test_local_source_symlinks_are_rejected_before_installer(tmp_path, installer, name):
+    from test_updates import commit
+
+    source, skill, _ = source_repo(tmp_path)
+    target = target_repo(tmp_path)
+    outside = tmp_path / "private-fixture"
+    outside.mkdir()
+    secret = outside / "secret.txt"
+    secret.write_text("Disposable secret fixture")
+    link = skill / name
+    if link.exists():
+        link.unlink()
+    link.symlink_to(outside if name == "linked-directory" else secret)
+    commit(source, "linked source")
+    marker = tmp_path / "installer-called"
+    installer.write_text(f"#!/bin/sh\ntouch '{marker}'\nexit 1\n")
+    result = cli(
+        "skills",
+        "install",
+        target,
+        "--from",
+        source,
+        "--bundle",
+        "show-me",
+        "--plan",
+        tmp_path / "plan.json",
+    )
+    assert result.returncode != 0 and "symlink" in result.stderr.lower()
+    assert not marker.exists()
+    assert not (tmp_path / "plan.json").exists()
+    assert not (target / "skills-lock.json").exists()

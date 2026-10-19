@@ -1,8 +1,10 @@
 """Read-only comparisons: external installation runs only in disposable staging."""
 
+import json
 from pathlib import Path
 
 from .files import Plan
+from .skill_files import contents
 from .skill_stage import build_stage, target_root
 from .skills import BUNDLES, external_records, skill_locations
 
@@ -25,6 +27,9 @@ def check_skills(target: Path, bundle: str | None) -> tuple[str, int]:
         lines.append("No installed supported skills to compare; use skills install.")
         return "\n".join(lines), 0
     stage = build_stage(root, bundles, True, None, None)
+    proposed_records = json.loads(
+        contents(stage["after"]["skills-lock.json"]) or b"{}"
+    )["skills"]
     for name in stage["names"]:
         prefixes = (f".agents/skills/{name}", f".claude/skills/{name}")
         before = {
@@ -42,11 +47,12 @@ def check_skills(target: Path, bundle: str | None) -> tuple[str, int]:
             if before != after
             else "installed files/layout match current upstream proposal"
         )
-        record = (
-            "external record present"
-            if name in records
-            else "unrecorded; preview install to establish external records"
-        )
+        if name not in records:
+            record = "unrecorded; preview install to establish external records"
+        elif records[name] == proposed_records[name]:
+            record = "external record matches current upstream proposal"
+        else:
+            record = "external record differs from current upstream proposal"
         lines.append(f"  {name}: {status}; {record}")
     lines.append(
         "Differences may include local customizations; this does not certify compatibility. Preview skills update/install for an HTML comparison. Target unchanged."
