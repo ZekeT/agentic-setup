@@ -1,6 +1,6 @@
 # Stage external skill installations
 
-Status: implementing
+Status: implemented (publication and live apply pending)
 
 ## Problem
 
