@@ -38,4 +38,6 @@ issue closure, promotion, merge or force-push as a side effect.
 
 For this rebuild only: baseline is archive/pre-simplification-2026-10-19;
 work branch is rebuild/minimal-starter. Local scoped commits are authorized.
-No push, remote PR, promotion or merge is authorized.
+The subsequent publication request authorizes pushing this branch, creating its
+PR to main in ZekeT/agentic-starter via origin, and publishing the existing v3.0.0
+tag as a release. Merge and force-push require separate authorization.

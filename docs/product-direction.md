@@ -15,6 +15,34 @@ This repository maintains the external setup tool. Each generated or adopted
 project owns its own application source, docs, tracker and development workflow.
 See [repository architecture](architecture.md) for the installation boundary.
 
+### Central development preferences and target inspection
+
+Clone this repository separately and run its commands against an explicit target
+workspace. The starter owns personal development conventions, setup and
+configuration that complement Matt Pocock, Pstack and HumanLayer. Their selected
+skills are installed unmodified into the target project itself. Each project owns
+its application, documentation, scratch plans and intentional local overrides.
+
+Changes to these central conventions should be adoptable across projects through
+explicit, versioned, selective updates. A future read-only inspection command
+should report missing configuration, installed starter version, differences from
+the selected conventions and recognized project overrides. It should recommend
+initialization for a new destination or adoption for an existing project, without
+silently choosing or applying either. File/configuration checks cannot certify
+qualitative adherence in application code; use the project's native checks and
+advisory review for that assessment.
+
+Inspection should also report installed upstream skill revisions, whether they
+match the starter's selected pins, and, on an explicitly requested online check,
+whether newer upstream revisions exist. Distinguish a newer upstream revision
+from a version selected and tested by the starter. Guidance and skill updates
+must be independently selectable, preview changes, preserve project modifications
+and report conflicts. No background updates or mandatory session-start checks.
+
+Delivery boundary: v3.0.0 provides initialization, adoption, scoped guidance updates
+and pinned skill installation. Unified inspection, upstream freshness reporting
+and automated skill upgrades are follow-up work, not shipped capabilities.
+
 Rebuild `https://github.com/ZekeT/agentic-starter` in the same Git repository around Matt Pocock's development workflow. Add selected Pstack guidance and capabilities, HumanLayer show-me explanations, simple onboarding, and configurable Git conventions. Preserve the existing implementation with an annotated local tag before destructive changes.
 
 The immediate priority is an ongoing large project already using an older Agentic Starter. Its development has become slow because of the starter's overhead. Deliver a minimal, reversible transition that removes that overhead without refactoring the application or waiting for the whole rebuild. Then continue improving the starter through explicit, selective upgrades that the application can adopt when ready.
