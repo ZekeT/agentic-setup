@@ -1,6 +1,6 @@
 # Inspect a target workspace
 
-Status: implemented and reviewed locally; awaiting publication
+Status: implemented and reviewed; awaiting merge
 
 - [x] Report setup and recommend the applicable next step.
 - [x] Compare conventions while identifying project-owned changes.

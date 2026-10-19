@@ -1,6 +1,6 @@
 # Read-only target inspection
 
-Status: implemented and reviewed locally; awaiting publication
+Status: implemented and reviewed; awaiting merge
 
 ## Scope
 
@@ -54,3 +54,17 @@ Standards and Spec follow-up on a1e1485...1af2112 report zero remaining findings
 
 No remote publication, live target migration or online freshness check performed.
 The pre-existing untracked .agentic-setup skill records were preserved unchanged.
+
+## Shared comparison follow-up
+
+The user accepted the review recommendation to share template comparison before PR
+publication. A pure comparison now owns both report classifications and safe replacement
+content; inspection renders its result and the updater builds its plan from that result.
+Eight CLI agreement cases cover current, already-updated, local additions/edits,
+replaceable templates, preserved additions, conflicts and missing files.
+
+Final `make check`: Ruff lint/format, mypy and 38 tests passed (40.62 seconds).
+Independent parallel Standards/Spec review of 92e673a...45d23aa reported zero findings
+on both axes, resolving the prior optional duplication concern. The reviewer also
+compared 504 input combinations against previous updater decisions without discrepancies.
+The subsequent request authorizes publishing this feature PR; merge remains separate.
