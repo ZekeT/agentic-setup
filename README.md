@@ -39,8 +39,9 @@ malformed configuration return an error without modifying the target.
 Checks are limited to bundled guidance, known legacy paths, bounded setup documents
 and skill directories. This does not certify application code quality, traverse all
 instruction imports, verify installed skill contents against upstream, or check
-online for newer versions. A recorded revision differing from the bundled selection
-is not necessarily outdated. Online skill freshness and updates remain separate work.
+online for newer versions. A recorded revision differing from the historical reference revision
+is not necessarily outdated. Online freshness checking remains separate work; explicit
+installation/update commands below fetch only when requested.
 
 ## Move an existing starter project first
 
@@ -94,34 +95,58 @@ discovered native command candidates as unverified until exercised. Resolve conf
 Commit the configuration before installing additional skills. Existing OpenSpec
 application artifacts are preserved; no OpenSpec conversion feature is included.
 
-## Install selected skills once
+## Install and update selected skills explicitly
 
-Fetch the chosen upstream into a separate directory, then check out its recorded
-commit. The installer copies selected skill directories unchanged, retains licenses,
-and refuses duplicate upstream names. Existing exposed skills are preserved;
-upgrading them is a separate explicit decision. It does not install a second TDD.
+Install defaults to the selected upstream repository's latest default-branch commit.
+It prints the resolved commit and previews target changes. Replay that commit with
+`--ref` when applying so a moving upstream does not invalidate your preview:
 
 ```bash
-git clone https://github.com/mattpocock/skills.git /tmp/matt-skills
-git -C /tmp/matt-skills checkout 4588b32ecab9ecc9fc8cc6b6c5e7d675b6004b0d
-./agentic skills install /path/to/project --from /tmp/matt-skills --bundle matt
-./agentic skills install /path/to/project --from /tmp/matt-skills --bundle matt --apply --expect TOKEN
+./agentic skills install /path/to/project --bundle matt
+./agentic skills install /path/to/project --bundle matt --ref RESOLVED_COMMIT --apply --expect TOKEN
+
+./agentic skills update /path/to/project --bundle matt
+./agentic skills update /path/to/project --bundle matt --ref RESOLVED_COMMIT --apply --expect TOKEN
 ```
 
-Initialize Git and commit first for new projects. Skills go into `.claude/skills`;
-Claude discovers them, and other runtimes may read the same SKILL.md directly.
-Check your runtime supports each selected skill's subagent needs. Do not install
-another copy with the same exposed name. Run `/setup-matt-pocock-skills` to confirm
-missing tracker/domain configuration, reusing existing answers. Local Markdown is
-the suggested tracker for new projects; existing trackers keep their semantics.
-Triage configuration is only needed when its skill is installed.
+`RESOLVED_COMMIT` is the full hash printed in the `SOURCE` line. `TOKEN` is the
+`PREVIEW` value. Fetching uses a temporary external checkout, removed after planning;
+it does not modify the target during preview. No remote checks happen during normal
+development or `agentic inspect`. Latest means upstream HEAD, not a compatibility
+certification. Bundle selections remain explicit; missing upstream names require
+review instead of silently choosing different skills.
 
-Optional bundles use the same preview/apply command:
+For offline use, supply `--from /path/to/clean-upstream-checkout`. Its current committed
+HEAD is the selected revision, with no fetch or checkout changes. An optional `--ref`
+must match that HEAD. Local checkouts are explicitly trusted sources for the chosen
+bundle; the tool does not independently authenticate their origin.
 
-| Bundle | Upstream | Required checkout |
+Initialize Git and commit first for new targets. Installation copies selected skill
+files into `.claude/skills/`, recording source, commit and file hashes. Existing exposed
+skills are preserved; installation never shadows a local skill. Updates change only
+recorded bundle skills: unchanged managed files can be replaced or deleted when removed
+upstream, and deletions must also match the recorded upstream Git tree. If that older
+commit is unavailable (for example in a shallow offline checkout), deletion is blocked;
+provide a checkout containing that revision. Locally modified/deleted files, incoming paths that overlap project additions,
+relocated skills and duplicate names require reconciliation. Unrelated project-added
+files remain untouched. Commit affected configuration before apply; repeat updates are
+no-ops. Upstream licenses are retained by revision; old licenses are not overwritten.
+
+Older records containing only source and commit need a verified file baseline first.
+Preview `skills install` with `--ref RECORDED_COMMIT` (or its clean `--from` checkout),
+then apply with that preview token. The tool adds hashes only if all installed skill
+bytes match the recorded revision. Commit that metadata before updating. Unrecorded or
+customized skills remain project-owned; no ownership is guessed from their names.
+
+| Bundle | Upstream | Selection |
 | --- | --- | --- |
-| show-me | humanlayer/skills | 3c2629142c5d437428269b1b722b08c0b87f574d |
-| verification | backnotprop/pstack | 6f131f137de64fdaf928278c0fd9ecec520ccbee |
+| matt | mattpocock/skills | Selected planning, implementation, TDD, review and PR skills |
+| show-me | humanlayer/skills | show-me |
+| verification | backnotprop/pstack | create-verification-skill, maintain-verification-skill |
+
+Claude discovers `.claude/skills`; other runtimes may read the same SKILL.md directly.
+Check each selected skill's runtime/subagent requirements. Run `/setup-matt-pocock-skills`
+to confirm tracker/domain setup, preserving the project's existing choices.
 
 The verification bundle pairs create-verification-skill with its maintenance skill.
 Use it once runnable behavior exists; exercise one real recipe before claiming it
@@ -139,7 +164,7 @@ gate. Optional model-heavy investigations and architecture work remain separate.
 | Review final changes | /code-review against intended PR target |
 | Understand the result | show-me briefing; deeper how/why investigation when useful |
 | Prepare a PR description | explanation first, then /pr |
-| Improve architecture | Matt's codebase-design at this pin; advisory, user-invoked |
+| Improve architecture | Matt's selected codebase-design; advisory, user-invoked |
 | Learn from recurring problems | /retro |
 
 Checkpoint intended final changes before Matt's committed-diff review and review
@@ -167,10 +192,10 @@ Scopes: explanation, git, workflow, standards. Only the selected template change
 An intact old template surrounded by project additions can update safely; overlapping
 edits require a reviewed manual merge. Reapplying is a no-op. Existing project-owned
 guidance is never claimed. The compact `.agentic-setup` record stores installation
-baselines and skill pins only. Skill upgrades and feature removals use reviewed
-scoped patches: compare the pinned versions, update/remove their own references,
-preserve custom extensions, run native checks, and commit separately. There is no
-automatic upstream skill merge or generalized feature-removal engine.
+baselines and skill installation records only. Use `agentic skills update` for explicit
+skill upgrades. Overlapping skill edits and feature removals still require reviewed
+scoped patches; preserve custom extensions, run relevant checks and commit separately.
+There is no automatic upstream skill merge or generalized feature-removal engine.
 
 [Maintainer details](CONTRIBUTING.md) describe tests and the preserved baseline.
 
@@ -184,6 +209,6 @@ place; do not rename or duplicate them to upgrade. Conflicting metadata records
 in both locations require manual reconciliation. New workspaces use the new name.
 
 The skill installation command is `agentic skills install`; `agentic inspect` reports
-local setup and recorded revisions. `agentic skills check` and `agentic skills update`
-are planned capabilities, not available commands. Development conventions is the term for shared workflow, Git
+local setup and recorded revisions. `agentic skills update` previews explicit upgrades.
+A separate online `agentic skills check` remains future work. Development conventions is the term for shared workflow, Git
 preferences, standards and configuration; no profile abstraction is introduced.

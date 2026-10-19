@@ -91,9 +91,9 @@ def skill_report(plan: Plan, metadata: str) -> list[str]:
             expected = selected.get(name)
             if expected:
                 status += (
-                    "; matches bundled selection"
+                    "; matches reference revision"
                     if expected == (record["source"], record["commit"])
-                    else "; differs from bundled selection (not necessarily outdated)"
+                    else "; differs from reference revision (not necessarily outdated)"
                 )
         lines.append(f"  {name}: {status}")
         lines.extend(f"    {location}" for location in locations)
