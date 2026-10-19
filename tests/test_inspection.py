@@ -1,5 +1,6 @@
 """Inspection advises through the CLI without modifying the target workspace."""
 
+import hashlib
 import json
 
 import pytest
@@ -20,7 +21,7 @@ def snapshot(root):
         str(p.relative_to(root)): (
             p.readlink().as_posix()
             if p.is_symlink()
-            else p.read_bytes()
+            else hashlib.sha256(p.read_bytes()).hexdigest()
             if p.is_file()
             else None
         )

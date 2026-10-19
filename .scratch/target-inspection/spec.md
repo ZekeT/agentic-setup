@@ -68,3 +68,9 @@ Independent parallel Standards/Spec review of 92e673a...45d23aa reported zero fi
 on both axes, resolving the prior optional duplication concern. The reviewer also
 compared 504 input combinations against previous updater decisions without discrepancies.
 The subsequent request authorizes publishing this feature PR; merge remains separate.
+
+Publication: PR #57. Initial Linux CI exposed fixture background Git maintenance
+changing pack files after the fixture's baseline commit. Disable automatic GC and
+maintenance in that disposable repository before committing; retain the complete
+no-mutation snapshot assertion. Snapshot values now use SHA-256 hashes to avoid
+binary dumps on failure. All 24 inspection/transition tests passed after correction.
