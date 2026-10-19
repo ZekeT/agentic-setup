@@ -222,6 +222,7 @@ def add_payload(plan: Plan) -> None:
             )
             files[name] = text
     record = {
+        **prior,
         "version": "4.0.0",
         "source": "https://github.com/ZekeT/agentic-starter",
         "files": files,

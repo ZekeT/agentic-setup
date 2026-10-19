@@ -2,7 +2,7 @@
 
 **What to build:** Safely remove old starter overhead through external preview/apply.
 **Blocked by:** None
-**Status:** implemented; review corrections in progress
+**Status:** implemented; awaiting human review
 
 - [x] Preview leaves target untouched and explains actions/conflicts.
 - [x] Apply preserves source, tasks, tests, custom instructions and useful hooks.

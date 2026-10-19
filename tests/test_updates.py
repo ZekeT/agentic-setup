@@ -69,3 +69,13 @@ def test_later_selective_update_preserves_application_and_customization(tmp_path
     assert "Team example: invoices." in guidance.read_text()
     assert (target / "app.js").read_text() == 'console.log("application progress");\n'
     assert "No changes" in run(*command, cwd=upstream).stdout
+    repeated_adoption = run(
+        sys.executable,
+        str(upstream / "engineering"),
+        "adopt",
+        str(target),
+        "--minimal",
+        cwd=upstream,
+    )
+    assert repeated_adoption.returncode == 0, repeated_adoption.stderr
+    assert "No changes" in repeated_adoption.stdout

@@ -2,7 +2,7 @@
 
 **What to build:** Configuration-only initialization/adoption and explicit scoped updates.
 **Blocked by:** 01: Minimal transition
-**Status:** implemented; review corrections in progress
+**Status:** implemented; awaiting human review
 
 - [x] Initialization refuses existing destinations; Python seed is opt-in.
 - [x] Matt setup contracts and skills are available from recorded versions.
