@@ -1,6 +1,6 @@
 # Agentic Setup naming
 
-Status: implemented and reviewed; publication in progress
+Status: published in PR #56; awaiting merge
 
 ## Problem Statement
 
