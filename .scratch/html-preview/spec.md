@@ -1,6 +1,6 @@
 # Readable HTML transition previews
 
-Status: in progress
+Status: implemented and reviewed locally; ready for PR
 
 Provide `--html PATH` on adopt, scoped update and skill install/update previews.
 Keep existing terminal output, exit status and preview token. Save a standalone,
