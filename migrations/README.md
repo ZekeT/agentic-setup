@@ -1,5 +1,8 @@
 # Local migration plans and previews
 
+Agents: follow the [migration agent guide](../docs/migration-agent-guide.md) before
+working on a live target. The format below supports that one-project-at-a-time process.
+
 Keep each target's artifacts together under its workspace name:
 
 ```text

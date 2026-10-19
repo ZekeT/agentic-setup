@@ -45,6 +45,10 @@ update commands below also fetch only when requested.
 
 ## Move an existing starter project first
 
+For agent-assisted migration, use the [migration agent guide](docs/migration-agent-guide.md).
+It covers project-specific decisions and the preview/approval boundary for the three
+existing projects; no self-service resolution interface is needed.
+
 From this external Agentic Setup checkout, against a committed Git project:
 
 ```bash
@@ -96,17 +100,17 @@ catalog. It disconnects old review, evidence, publication and installer gates,
 keeps useful protection hooks and installed skills, and preserves application
 source, tests, dependencies, specs, tickets and ADRs. Customized active policy,
 CI or imports become conflicts before writes. Customized dormant files are reported
-and retained. Unknown older layouts need a reviewed manual patch, not deletion.
+and retained. Unknown older layouts need an explicit resolution plan or a tested tool extension,
+not direct target edits or blanket deletion.
 Ignored local evidence/state is left alone. Remote required checks need separate
 inspection; local adoption cannot change branch protections.
 
-Review `git diff`, run the recorded native checks, and commit only the transition
-paths as a dedicated infrastructure commit. Then resume the next existing ticket
-with `/implement`. Roll back later with `git revert <transition-commit>`; never
-reset later application work. Before committing, restore only changed tracked
-paths from the reported baseline and remove only newly added installer files after
-checking that they are unchanged. Ordinary write errors restore touched bytes and
-modes; after a process kill/power loss inspect the scoped diff against the baseline.
+After approved application, inspect the scoped diff read-only and report actual checks
+and recovery information. The human manages target commits and any later Git revert;
+agents must not modify target Git state or restore files directly as a workaround.
+Resolution applies keep external originals under the migration folder. Ordinary write
+errors restore touched bytes and modes; after interruption, inspect the state before
+proposing recovery. No automatic restore command is currently available.
 
 ## New and ordinary existing projects
 

@@ -18,6 +18,7 @@ publication service, or mandatory extra reviewer. Security and architectural
 assessment are user-invoked, advisory work.
 
 Read source before changing it. Preserve application content and unrelated work.
+For existing-project migration, follow docs/migration-agent-guide.md.
 For live target projects, preview first and refine this setup tool until the user
 approves the proposed transition. Only Agentic Setup commands may modify a live
 target; never directly edit/delete its files, switch its branches, commit there or
