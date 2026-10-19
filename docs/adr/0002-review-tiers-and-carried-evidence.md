@@ -1,3 +1,6 @@
+> Historical ADR: superseded for the rebuilt starter by the directional-change handover.
+> Retained for rationale; not active workflow policy.
+
 # Review tiers and carried evidence
 
 Status: accepted (2026-09-28)

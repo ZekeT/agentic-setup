@@ -1,9 +1,5 @@
-name: Engineering System checks
-on:
-  push:
-    branches: [main]
-  pull_request:
-  workflow_dispatch:
+name: Starter checks
+on: [push, pull_request, workflow_dispatch]
 jobs:
   checks:
     runs-on: ubuntu-latest
@@ -12,21 +8,5 @@ jobs:
         with:
           fetch-depth: 0
       - uses: astral-sh/setup-uv@v5
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-      - name: Explicit dependency installation
-        run: make setup
-      - name: Project checks
-        run: make check
-      - name: Engineering tests
-        run: make engineering-test
-      - name: Static integration evals
-        run: make engineering-evals
-      - name: Distribution metadata is current
-        run: |
-          make manifest
-          git diff --exit-code -- .engineering/manifest.json .engineering/state/install.json
+      - run: make setup
+      - run: make check

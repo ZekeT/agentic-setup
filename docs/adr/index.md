@@ -1,3 +1,6 @@
+> Historical ADR: superseded for the rebuilt starter by the directional-change handover.
+> Retained for rationale; not active workflow policy.
+
 # Architectural decisions
 
 Record durable decisions, alternatives and reasons here. Keep current structural navigation in Graft and work decisions in the configured tracker. Do not mirror every application behavior in prose.

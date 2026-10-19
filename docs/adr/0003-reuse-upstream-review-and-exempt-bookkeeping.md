@@ -1,3 +1,6 @@
+> Historical ADR: superseded for the rebuilt starter by the directional-change handover.
+> Retained for rationale; not active workflow policy.
+
 # Reuse upstream review and exempt mechanical bookkeeping
 
 Status: accepted design (2026-10-05); implementation pending. Supersedes the relevant review and check decisions in ADR 0002 as the agreed target design. ADR 0002 remains operational policy until the replacement is implemented.

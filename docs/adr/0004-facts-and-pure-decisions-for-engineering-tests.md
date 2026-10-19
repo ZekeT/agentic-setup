@@ -1,3 +1,6 @@
+> Historical ADR: superseded for the rebuilt starter by the directional-change handover.
+> Retained for rationale; not active workflow policy.
+
 # Facts and pure decisions for engineering tests
 
 Status: accepted design (2026-10-14); implementation pending (tickets 03–07 of `engineering-test-speed`).

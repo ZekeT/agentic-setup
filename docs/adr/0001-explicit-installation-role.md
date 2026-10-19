@@ -1,3 +1,6 @@
+> Historical ADR: superseded for the rebuilt starter by the directional-change handover.
+> Retained for rationale; not active workflow policy.
+
 # Explicit installation role decides maintainer verification
 
 Status: accepted (2026-09-27)
