@@ -48,3 +48,10 @@ and copied-file hashes make subsequent updates bounded and explicit. `--ref` rep
 previewed revision; moving latest revisions invalidate old apply tokens. Licensing is
 retained by revision. Older commit-only records need exact-byte verification before
 new ownership baselines can be established. This is installation metadata only.
+
+`agentic skills check` reuses that temporary source resolver for explicit online revision
+comparisons, without generating or applying a mutation plan. It groups recorded skills
+by configured bundle source, compares Git ancestry and reports partial failures. Target
+metadata supplies recorded hashes only, never remote URLs. It does not verify installed
+contents or certify compatibility; `inspect` remains offline and `skills update` previews
+actual file changes separately.

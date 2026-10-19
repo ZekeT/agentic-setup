@@ -8,6 +8,7 @@ from pathlib import Path
 
 from .adopt import plan_adoption
 from .files import baseline, checked_root
+from .freshness import check_skills
 from .inspection import inspect_target
 from .setup import SCOPES, initialize, plan_update
 from .skills import BUNDLES, plan_skills
@@ -45,6 +46,11 @@ def main() -> int:
     update.add_argument("--expect")
     skills_group = commands.add_parser("skills")
     skill_commands = skills_group.add_subparsers(dest="skill_command", required=True)
+    skill_check = skill_commands.add_parser(
+        "check", help="read-only online revision check"
+    )
+    skill_check.add_argument("target", type=Path)
+    skill_check.add_argument("--bundle", choices=BUNDLES)
     for operation in ("install", "update"):
         skills = skill_commands.add_parser(operation)
         skills.add_argument("target", type=Path)
@@ -63,6 +69,10 @@ def main() -> int:
         skills.add_argument("--expect")
     args = parser.parse_args()
     try:
+        if args.command == "skills" and args.skill_command == "check":
+            report, status = check_skills(args.target, args.bundle)
+            print(report)
+            return status
         if args.command == "inspect":
             print(inspect_target(args.target))
             return 0

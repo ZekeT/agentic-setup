@@ -40,8 +40,8 @@ Checks are limited to bundled guidance, known legacy paths, bounded setup docume
 and skill directories. This does not certify application code quality, traverse all
 instruction imports, verify installed skill contents against upstream, or check
 online for newer versions. A recorded revision differing from the historical reference revision
-is not necessarily outdated. Online freshness checking remains separate work; explicit
-installation/update commands below fetch only when requested.
+is not necessarily outdated. Use `agentic skills check` for an explicit online revision check; installation and
+update commands below also fetch only when requested.
 
 ## Move an existing starter project first
 
@@ -94,6 +94,31 @@ that discovered standards cover the project’s needs. `docs/agents/checks.md` r
 discovered native command candidates as unverified until exercised. Resolve conflicting old requirements before considering adoption done.
 Commit the configuration before installing additional skills. Existing OpenSpec
 application artifacts are preserved; no OpenSpec conversion feature is included.
+
+## Check upstream skill revisions
+
+```bash
+./agentic skills check /path/to/project
+./agentic skills check /path/to/project --bundle show-me
+```
+
+This is an explicit online, read-only check of recorded supported skills. It resolves
+upstream default-branch HEAD once per relevant source in a temporary checkout, then
+compares Git ancestry: **current**, **behind**, **ahead**, or **diverged**. Recorded
+commits unavailable upstream, unrelated history and unknown sources report **unknown**.
+Repository advancement does not necessarily change a selected skill, and a matching
+revision does not verify installed bytes or certify compatibility.
+
+Missing or duplicate recorded installations are reported. Unrecorded skills are left
+unclassified; their source is never guessed. The command accepts older commit-only
+records and `.starter/` metadata. It contacts only configured bundle repositories,
+never URLs supplied by target metadata. No supported records means no network access.
+A failed source produces a partial report; other sources are still checked.
+
+Exit 0 means comparisons completed (including available updates or no recorded skills).
+Exit 1 means an incomplete check, missing/duplicate recorded installations or invalid
+input. Target files and Git state are unchanged; there is no cache or background check.
+Use `skills update` to preview actual file changes and check for local conflicts.
 
 ## Install and update selected skills explicitly
 
@@ -210,5 +235,5 @@ in both locations require manual reconciliation. New workspaces use the new name
 
 The skill installation command is `agentic skills install`; `agentic inspect` reports
 local setup and recorded revisions. `agentic skills update` previews explicit upgrades.
-A separate online `agentic skills check` remains future work. Development conventions is the term for shared workflow, Git
+`agentic skills check` explicitly compares recorded revisions with upstream. Development conventions is the term for shared workflow, Git
 preferences, standards and configuration; no profile abstraction is introduced.
