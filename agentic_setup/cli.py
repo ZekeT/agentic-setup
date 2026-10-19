@@ -13,7 +13,8 @@ from .skills import BUNDLES, plan_skills
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Explicit external starter installation; no daily runtime"
+        prog="agentic",
+        description="Agentic Setup: configure target workspaces with development conventions and skills",
     )
     commands = parser.add_subparsers(dest="command", required=True)
     adopt = commands.add_parser("adopt")
@@ -35,7 +36,9 @@ def main() -> int:
     update.add_argument("--source-ref", required=True)
     update.add_argument("--apply", action="store_true")
     update.add_argument("--expect")
-    skills = commands.add_parser("skills")
+    skills_group = commands.add_parser("skills")
+    skill_commands = skills_group.add_subparsers(dest="skill_command", required=True)
+    skills = skill_commands.add_parser("install")
     skills.add_argument("target", type=Path)
     skills.add_argument("--from", dest="checkout", type=Path, required=True)
     skills.add_argument("--bundle", choices=BUNDLES, default="matt")

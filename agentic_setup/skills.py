@@ -4,6 +4,7 @@ import json
 import re
 from pathlib import Path
 
+from .adopt import metadata_directory
 from .files import Plan, baseline, checked_root, encoded, git, read
 
 BUNDLES = {
@@ -92,7 +93,8 @@ def plan_skills(target: Path, checkout: Path, bundle: str) -> Plan:
             candidates[exposed] = Path(name).parent
     if set(candidates) != set(selected):
         raise ValueError(f"Missing upstream skills: {set(selected) - set(candidates)}")
-    record_path = ".starter/skills.json"
+    metadata = metadata_directory(plan)
+    record_path = f"{metadata}/skills.json"
     record = json.loads(plan.inspect(record_path) or b"{}")
     existing_names = installed_names(plan)
     for name, directory in candidates.items():
@@ -127,7 +129,7 @@ def plan_skills(target: Path, checkout: Path, bundle: str) -> Plan:
         record[name] = {"source": source, "commit": revision}
     for license_name in ("LICENSE", "LICENSE.md", "LICENSE.txt"):
         if license_name in files:
-            destination = f".starter/licenses/{bundle}/{license_name}"
+            destination = f"{metadata}/licenses/{bundle}/{license_name}"
             incoming = read(checkout, license_name)
             before = plan.inspect(destination)
             if before is not None and before != incoming:

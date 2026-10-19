@@ -10,7 +10,7 @@ Personal overrides allowed: branch prefix, work base, immediate PR base and push
 remote. Target repository changes require explicit team/task authorization.
 Read shared defaults here first, then `git config --local --get agent.branchPrefix`,
 `agent.workBase`, `agent.prBase`, `agent.pushRemote` and `agent.targetRepository`.
-These are starter conventions, not Git enforcement. Task instructions take
+These are development conventions, not Git enforcement. Task instructions take
 precedence where authorized. Never write machine-global settings.
 
 Keep these distinct: team integration branch; feature work base; review comparison

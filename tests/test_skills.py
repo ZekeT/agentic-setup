@@ -3,7 +3,7 @@
 from test_transition import run
 from test_updates import commit
 
-from starter.skills import BUNDLES, plan_skills
+from agentic_setup.skills import BUNDLES, plan_skills
 
 
 def test_existing_exposed_name_prevents_second_tdd(tmp_path, monkeypatch):

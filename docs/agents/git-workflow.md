@@ -10,7 +10,7 @@ Personal overrides allowed: branch prefix, work base, immediate PR base and push
 remote. Target repository changes require explicit team/task authorization.
 Read shared defaults here first, then `git config --local --get agent.branchPrefix`,
 `agent.workBase`, `agent.prBase`, `agent.pushRemote` and `agent.targetRepository`.
-These are starter conventions, not Git enforcement. Task instructions take
+These are development conventions, not Git enforcement. Task instructions take
 precedence where authorized. Never write machine-global settings.
 
 Keep these distinct: team integration branch; feature work base; review comparison
@@ -39,5 +39,5 @@ issue closure, promotion, merge or force-push as a side effect.
 For this rebuild only: baseline is archive/pre-simplification-2026-10-19;
 work branch is rebuild/minimal-starter. Local scoped commits are authorized.
 The subsequent publication request authorizes pushing this branch, creating its
-PR to main in ZekeT/agentic-starter via origin, and publishing the existing v3.0.0
+PR to main in ZekeT/agentic-setup via origin, and publishing the existing v3.0.0
 tag as a release. Merge and force-push require separate authorization.

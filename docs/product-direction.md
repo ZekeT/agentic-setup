@@ -1,4 +1,4 @@
-# Agentic Starter product direction (v3)
+# Agentic Setup product direction (v3)
 
 Accepted 19 October 2026. This is the durable product direction for v3 and subsequent
 features. Read the relevant decisions when planning changes; update them explicitly
@@ -14,6 +14,21 @@ incremental-refactor brief, including OpenSpec migration requirements, is supers
 This repository maintains the external setup tool. Each generated or adopted
 project owns its own application source, docs, tracker and development workflow.
 See [repository architecture](architecture.md) for the installation boundary.
+
+### Product vocabulary
+
+The product is **Agentic Setup**, maintained in the `agentic-setup` repository.
+The command is `agentic`; its Python implementation is `agentic_setup/`.
+Personal workflow, standards, Git preferences and configuration are **development
+conventions**. The receiving project is a **target workspace**. New installation
+metadata uses `.agentic-setup/`; published v3.0.0 `.starter/` records remain usable
+in place. Maintainer instructions live in `CONTRIBUTING.md`.
+
+Use `agentic init`, `agentic adopt`, `agentic update` and `agentic skills install`.
+Reserve `agentic inspect`, `agentic skills check` and `agentic skills update` for
+future implementations. A named **profile** can describe a bundle later, but no
+profile mechanism is introduced now. Historical migration identifiers and immutable
+release tags keep their original names.
 
 ### Central development preferences and target inspection
 
@@ -43,7 +58,7 @@ Delivery boundary: v3.0.0 provides initialization, adoption, scoped guidance upd
 and pinned skill installation. Unified inspection, upstream freshness reporting
 and automated skill upgrades are follow-up work, not shipped capabilities.
 
-Rebuild `https://github.com/ZekeT/agentic-starter` in the same Git repository around Matt Pocock's development workflow. Add selected Pstack guidance and capabilities, HumanLayer show-me explanations, simple onboarding, and configurable Git conventions. Preserve the existing implementation with an annotated local tag before destructive changes.
+Rebuild `https://github.com/ZekeT/agentic-setup` in the same Git repository around Matt Pocock's development workflow. Add selected Pstack guidance and capabilities, HumanLayer show-me explanations, simple onboarding, and configurable Git conventions. Preserve the existing implementation with an annotated local tag before destructive changes.
 
 The immediate priority is an ongoing large project already using an older Agentic Starter. Its development has become slow because of the starter's overhead. Deliver a minimal, reversible transition that removes that overhead without refactoring the application or waiting for the whole rebuild. Then continue improving the starter through explicit, selective upgrades that the application can adopt when ready.
 
@@ -94,8 +109,8 @@ Treat the ongoing application's transition as the first usable milestone. It mus
 Provide a small external command with preview and apply, for example:
 
 ```bash
-./engineering adopt /path/to/project --minimal
-./engineering adopt /path/to/project --minimal --apply
+./agentic adopt /path/to/project --minimal
+./agentic adopt /path/to/project --minimal --apply
 ```
 
 Command spelling may change for a materially simpler implementation. Preserve the two operations and document the real commands. Run the tool from the starter checkout; the target need not retain an installer runtime for daily development.
@@ -138,7 +153,7 @@ If a fully automated selective updater would delay the first milestone, ship a d
 
 ## 6. Greenfield and ordinary brownfield setup
 
-Expose one simple initializer and one preview/apply adoption entry point. Prefer the existing `./engineering` name if keeping it costs little. Setup should configure an existing agent workflow, not introduce a second task runner or workflow engine.
+Expose one simple initializer and one preview/apply adoption entry point. Use `./agentic` as the CLI entry point. Setup should configure an existing agent workflow, not introduce a second task runner or workflow engine.
 
 For greenfield, refuse an existing destination. Generate only shared instructions, standards, concise usage guidance, selected skills/configuration, and optional selected stack files. Configuration-only initialization is valid. Keep a Python seed only as an explicit option; do not impose Python application tools on other languages. Document installer prerequisites separately from application prerequisites. The generated payload excludes history, maintainer suites, legacy/OpenSpec migration code, and old verification/publication modules.
 

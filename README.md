@@ -1,7 +1,13 @@
-# Agentic Starter
+# Agentic Setup
+
+Configure target workspaces with your development conventions and selected agent
+skills, then adopt changes through explicit, scoped updates.
+
+Clone `ZekeT/agentic-setup` separately from your target workspaces. Run `./agentic`
+from this checkout; optionally add the checkout to PATH to call `agentic` anywhere.
 
 A small setup for Matt Pocock's development workflow. Applications use their own
-checks and installed skills; the starter runs only when you explicitly install or
+checks and installed skills; Agentic Setup runs only when you explicitly install or
 update guidance. This repository is the setup tool's source: its `.scratch/`, docs
 and tests maintain the tool itself. Every target project owns its own docs, tracker
 and application. Only selected guidance and skills are installed; the tool's code,
@@ -14,11 +20,11 @@ system python3 is older. No Node, uv, Makefile or Python application stack is im
 
 ## Move an existing starter project first
 
-From this external starter checkout, against a committed Git project:
+From this external Agentic Setup checkout, against a committed Git project:
 
 ```bash
-./engineering adopt /path/to/project --minimal
-./engineering adopt /path/to/project --minimal --apply --expect TOKEN
+./agentic adopt /path/to/project --minimal
+./agentic adopt /path/to/project --minimal --apply --expect TOKEN
 ```
 
 Use the `PREVIEW` token from the first command. Preview reads configuration only;
@@ -49,12 +55,12 @@ modes; after a process kill/power loss inspect the scoped diff against the basel
 ## New and ordinary existing projects
 
 ```bash
-./engineering init /path/to/new-project
+./agentic init /path/to/new-project
 # Optional application code, only if wanted:
-./engineering init /path/to/new-python-project --python-seed
+./agentic init /path/to/new-python-project --python-seed
 
-./engineering adopt /path/to/existing-project
-./engineering adopt /path/to/existing-project --apply --expect TOKEN
+./agentic adopt /path/to/existing-project
+./agentic adopt /path/to/existing-project --apply --expect TOKEN
 ```
 
 Initialization refuses an existing destination. Adoption preserves existing native
@@ -74,8 +80,8 @@ upgrading them is a separate explicit decision. It does not install a second TDD
 ```bash
 git clone https://github.com/mattpocock/skills.git /tmp/matt-skills
 git -C /tmp/matt-skills checkout 4588b32ecab9ecc9fc8cc6b6c5e7d675b6004b0d
-./engineering skills /path/to/project --from /tmp/matt-skills --bundle matt
-./engineering skills /path/to/project --from /tmp/matt-skills --bundle matt --apply --expect TOKEN
+./agentic skills install /path/to/project --from /tmp/matt-skills --bundle matt
+./agentic skills install /path/to/project --from /tmp/matt-skills --bundle matt --apply --expect TOKEN
 ```
 
 Initialize Git and commit first for new projects. Skills go into `.claude/skills`;
@@ -125,21 +131,35 @@ merge and force-push are separate authorizations.
 
 ## Explicit later updates
 
-Use a separate checkout of a known starter commit/release. No per-session fetch,
+Use a separate checkout of a known Agentic Setup commit/release. No per-session fetch,
 update check, mandatory upgrade or application-time digest validation runs.
 
 ```bash
-./engineering update /path/to/project --only explanation --source-ref FULL_COMMIT
-./engineering update /path/to/project --only explanation --source-ref FULL_COMMIT --apply --expect TOKEN
+./agentic update /path/to/project --only explanation --source-ref FULL_COMMIT
+./agentic update /path/to/project --only explanation --source-ref FULL_COMMIT --apply --expect TOKEN
 ```
 
 Scopes: explanation, git, workflow, standards. Only the selected template changes.
 An intact old template surrounded by project additions can update safely; overlapping
 edits require a reviewed manual merge. Reapplying is a no-op. Existing project-owned
-guidance is never claimed. The compact `.starter` record stores installation
+guidance is never claimed. The compact `.agentic-setup` record stores installation
 baselines and skill pins only. Skill upgrades and feature removals use reviewed
 scoped patches: compare the pinned versions, update/remove their own references,
 preserve custom extensions, run native checks, and commit separately. There is no
 automatic upstream skill merge or generalized feature-removal engine.
 
-[Maintainer details](ENGINEERING.md) describe tests and the preserved baseline.
+[Maintainer details](CONTRIBUTING.md) describe tests and the preserved baseline.
+
+## Naming and release compatibility
+
+Agentic Setup replaces the Agentic Starter name. This branch uses `agentic`, the
+`agentic_setup/` implementation package and `.agentic-setup/` installation metadata.
+The published v3.0.0 tag retains its original `engineering` command and names.
+Existing `.starter/` installation records and licenses continue to be used in
+place; do not rename or duplicate them to upgrade. Conflicting metadata records
+in both locations require manual reconciliation. New workspaces use the new name.
+
+The skill installation command is `agentic skills install`. Unified `agentic inspect`,
+`agentic skills check` and `agentic skills update` are planned capabilities, not
+available commands. Development conventions is the term for shared workflow, Git
+preferences, standards and configuration; no profile abstraction is introduced.

@@ -1,7 +1,7 @@
 [project]
-name = "agentic-starter"
+name = "agentic-setup"
 version = "3.0.0"
-description = "Small external onboarding tools for Matt Pocock's development workflow"
+description = "Configure target workspaces with development conventions and selected agent skills"
 requires-python = ">=3.11"
 dependencies = []
 
@@ -27,4 +27,4 @@ python_version = "3.11"
 check_untyped_defs = true
 
 [tool.ruff.lint.per-file-ignores]
-"engineering" = ["UP036", "E402"]
+"agentic" = ["UP036", "E402"]

@@ -4,7 +4,7 @@ import json
 import shutil
 from pathlib import Path
 
-from .adopt import RECORD, SOURCE, add_payload
+from .adopt import SOURCE, add_payload, metadata_directory
 from .files import Plan, baseline, checked_root, encoded, git, write_files
 
 SCOPES = {
@@ -46,20 +46,21 @@ def initialize(target: Path, python_seed: bool) -> None:
 def plan_update(target: Path, scope: str, source_ref: str) -> Plan:
     if git(SOURCE.parent, "rev-parse", "HEAD") != source_ref:
         raise ValueError(
-            "--source-ref must be the full commit of this starter checkout"
+            "--source-ref must be the full commit of Agentic Setup checkout"
         )
     name = SCOPES[scope]
-    if git(SOURCE.parent, "status", "--porcelain", "--", "starter"):
-        raise ValueError("Use a committed starter checkout for versioned updates")
+    if git(SOURCE.parent, "status", "--porcelain", "--", "agentic_setup"):
+        raise ValueError("Use a committed Agentic Setup checkout for versioned updates")
     plan = Plan(checked_root(target), baseline(target))
-    raw = plan.inspect(RECORD)
+    record_path = f"{metadata_directory(plan)}/install.json"
+    raw = plan.inspect(record_path)
     if raw is None:
         raise ValueError("Adopt this project before selective updates")
     record = json.loads(raw)
     prior = record["files"].get(name)
     if prior is None:
         raise ValueError(
-            f"{name}: not installed by this starter; preserve existing project guidance"
+            f"{name}: not installed by Agentic Setup; preserve existing project guidance"
         )
     local = plan.inspect(name)
     incoming = (SOURCE / "payload" / name).read_bytes()
@@ -83,5 +84,5 @@ def plan_update(target: Path, scope: str, source_ref: str) -> Plan:
         return plan
     record["files"][name] = incoming.decode()
     record["source_commit"] = source_ref
-    plan.change(RECORD, encoded(record), "record only selected template update")
+    plan.change(record_path, encoded(record), "record only selected template update")
     return plan

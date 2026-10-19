@@ -2,12 +2,12 @@
 setup:
 	uv sync --extra dev
 fmt:
-	uv run ruff check --fix starter tests engineering
-	uv run ruff format starter tests engineering
+	uv run ruff check --fix agentic_setup tests agentic
+	uv run ruff format agentic_setup tests agentic
 check:
-	uv run ruff check starter tests engineering
-	uv run ruff format --check starter tests engineering
-	uv run mypy starter
+	uv run ruff check agentic_setup tests agentic
+	uv run ruff format --check agentic_setup tests agentic
+	uv run mypy agentic_setup
 	uv run pytest
 test:
 	uv run pytest

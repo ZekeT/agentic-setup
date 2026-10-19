@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from starter.files import write_files
+from agentic_setup.files import write_files
 
 
 def test_write_failure_restores_bytes_modes_and_new_directories(tmp_path, monkeypatch):

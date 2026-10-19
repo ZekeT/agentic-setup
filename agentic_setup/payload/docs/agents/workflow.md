@@ -14,7 +14,7 @@ Never read .env or secret variants; use .env.template for variable names only.
 Run relevant native checks and exercise changed behavior at its real surface.
 Reuse current results, recheck affected behavior after corrections and report gaps.
 Keep red–green cycles focused; plan substantial preparatory refactors separately.
-No starter runtime or installation metadata is needed during daily development.
+No Agentic Setup runtime or installation metadata is needed during daily development.
 
 ## Agent skills
 

@@ -44,7 +44,7 @@ def legacy(tmp_path):
 
 
 def cli(*args):
-    return run(sys.executable, str(ROOT / "engineering"), *map(str, args))
+    return run(sys.executable, str(ROOT / "agentic"), *map(str, args))
 
 
 def test_minimal_preview_apply_preserves_application(tmp_path):
@@ -80,7 +80,7 @@ def test_customized_policy_is_conflict_without_writes(tmp_path):
     assert result.returncode == 1
     assert "customized integration" in result.stdout
     assert (target / ".engineering/engineering/verification.py").exists()
-    assert not (target / ".starter").exists()
+    assert not (target / ".agentic-setup").exists()
 
 
 def test_stale_preview_preserves_new_edits(tmp_path):
@@ -93,7 +93,7 @@ def test_stale_preview_preserves_new_edits(tmp_path):
     assert result.returncode == 1
     assert "Stale preview" in result.stderr
     assert "New project rule" in policy.read_text()
-    assert not (target / ".starter").exists()
+    assert not (target / ".agentic-setup").exists()
 
 
 def test_nested_instructions_and_team_ci_conflict(tmp_path):

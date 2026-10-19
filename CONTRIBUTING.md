@@ -12,8 +12,8 @@ make check
 
 Only maintainers need uv, Ruff, mypy and pytest. Runtime installation uses Python
 3.11+ standard library and Git. CI runs these native checks, no evidence platform.
-`starter/payload` is the consumer guidance; maintainer tests/history/runtime state
-are excluded. `starter/legacy.json` contains exact known historical file/section
+`agentic_setup/payload` is the consumer guidance; maintainer tests/history/runtime state
+are excluded. `agentic_setup/legacy.json` contains exact known historical file/section
 hashes for safe removal, not a runtime ownership manifest. The tool never trusts a
 target-provided manifest as permission to delete files.
 
@@ -38,7 +38,7 @@ the installer itself. Actual application migration remains unverified until a us
 supplies and authorizes that repository. Simulated policy checks are not actual
 agent execution or measured application speed improvements.
 
-Selected upstream revisions and licenses are recorded by `engineering skills`.
+Selected upstream revisions and licenses are recorded by `agentic skills install`.
 Matt 4588b32: setup, TDD, implement, code-review and pr inspected; unchanged bodies.
 HumanLayer 3c262914: show-me inspected, optional presentation.
 Pstack 6f131f13: reader load, subtraction, root causes, domain/boundary discipline,

@@ -10,7 +10,6 @@ from .discovery import native_commands, standards
 from .files import Plan, baseline, checked_root, digest, encoded, git
 
 SOURCE = Path(__file__).resolve().parent
-RECORD = ".starter/install.json"
 REGION = re.compile(
     rb"(?m)^(?:<!-- |# )engineering:(integration|navigation):begin(?: -->)?\n.*?^(?:<!-- |# )engineering:\1:end(?: -->)?(?:\n|$)",
     re.S,
@@ -30,6 +29,22 @@ check:
 \tuv run mypy src
 \tuv run pytest
 """
+
+
+def metadata_directory(plan: Plan) -> str:
+    """Keep published v3.0.0 records usable without splitting installation history."""
+    installed = []
+    for directory in (".agentic-setup", ".starter"):
+        records = [
+            plan.inspect(f"{directory}/{name}.json") for name in ("install", "skills")
+        ]
+        if any(raw is not None for raw in records):
+            installed.append(directory)
+    if len(installed) > 1:
+        raise ValueError(
+            "Conflicting installation metadata in .agentic-setup and .starter; reconcile before applying"
+        )
+    return installed[0] if installed else ".agentic-setup"
 
 
 def legacy_changes(plan: Plan) -> None:
@@ -165,7 +180,8 @@ def inspect_wiring(plan: Plan) -> None:
 
 
 def add_payload(plan: Plan) -> None:
-    prior_raw = plan.inspect(RECORD)
+    record_path = f"{metadata_directory(plan)}/install.json"
+    prior_raw = plan.inspect(record_path)
     prior: dict[str, Any] = (
         json.loads(prior_raw) if prior_raw else {"version": "3.0.0", "files": {}}
     )
@@ -224,11 +240,11 @@ def add_payload(plan: Plan) -> None:
     record = {
         **prior,
         "version": "3.0.0",
-        "source": "https://github.com/ZekeT/agentic-starter",
+        "source": "https://github.com/ZekeT/agentic-setup",
         "files": files,
     }
     plan.change(
-        RECORD,
+        record_path,
         encoded(record),
         "installation-only template baselines; never checked during development",
     )
@@ -241,7 +257,7 @@ def plan_adoption(target: Path, minimal: bool) -> Plan:
         or target.is_relative_to(SOURCE.parent)
         or SOURCE.parent.is_relative_to(target)
     ):
-        raise ValueError("Target must be outside the starter checkout")
+        raise ValueError("Target must be outside the Agentic Setup checkout")
     plan = Plan(target, baseline(target))
     for old_root in (".harness", ".factory"):
         if (target / old_root).exists():
@@ -252,7 +268,7 @@ def plan_adoption(target: Path, minimal: bool) -> Plan:
     plan.notes.append(
         f"BASELINE {plan.baseline}; installed legacy version: {(version or b'unknown').decode().strip()}"
     )
-    if minimal and plan.inspect(RECORD) is None:
+    if minimal and plan.inspect(f"{metadata_directory(plan)}/install.json") is None:
         legacy_changes(plan)
     add_payload(plan)
     inspect_wiring(plan)

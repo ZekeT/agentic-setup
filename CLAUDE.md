@@ -1,6 +1,6 @@
 # Project instructions
 
-Read README.md for the consumer workflow and ENGINEERING.md for maintainer setup.
+Read README.md for the consumer workflow and CONTRIBUTING.md for maintainer setup.
 Read the relevant decisions in [product direction](docs/product-direction.md)
 when planning features. Feature specs and delivery status live in `.scratch/`.
 

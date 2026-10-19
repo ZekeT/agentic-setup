@@ -3,6 +3,7 @@
 import shutil
 import sys
 
+import pytest
 from test_transition import ROOT, cli, legacy, run
 
 
@@ -23,12 +24,17 @@ def commit(root, message):
     return run("git", "rev-parse", "HEAD", cwd=root).stdout.strip()
 
 
-def test_later_selective_update_preserves_application_and_customization(tmp_path):
+@pytest.mark.parametrize("metadata", [".agentic-setup", ".starter"])
+def test_later_selective_update_preserves_application_and_customization(
+    tmp_path, metadata
+):
     target = legacy(tmp_path)
     preview = cli("adopt", target, "--minimal")
     token = preview.stdout.split("PREVIEW ")[1].splitlines()[0]
     applied = cli("adopt", target, "--minimal", "--apply", "--expect", token)
     assert applied.returncode == 0, applied.stderr
+    if metadata == ".starter":
+        (target / ".agentic-setup").rename(target / ".starter")
     commit(target, "minimal transition")
     guidance = target / "docs/agents/explanation.md"
     guidance.write_text(guidance.read_text() + "\nTeam example: invoices.\n")
@@ -37,13 +43,13 @@ def test_later_selective_update_preserves_application_and_customization(tmp_path
     upstream = tmp_path / "starter"
     upstream.mkdir()
     shutil.copytree(
-        ROOT / "starter",
-        upstream / "starter",
+        ROOT / "agentic_setup",
+        upstream / "agentic_setup",
         ignore=shutil.ignore_patterns("__pycache__"),
     )
-    shutil.copy(ROOT / "engineering", upstream / "engineering")
+    shutil.copy(ROOT / "agentic", upstream / "agentic")
     run("git", "init", "-q", cwd=upstream)
-    incoming = upstream / "starter/payload/docs/agents/explanation.md"
+    incoming = upstream / "agentic_setup/payload/docs/agents/explanation.md"
     incoming.write_text(
         incoming.read_text().replace(
             "a compact show-me briefing", "a concrete show-me briefing"
@@ -52,7 +58,7 @@ def test_later_selective_update_preserves_application_and_customization(tmp_path
     revision = commit(upstream, "explicit later explanation update")
     command = [
         sys.executable,
-        str(upstream / "engineering"),
+        str(upstream / "agentic"),
         "update",
         str(target),
         "--only",
@@ -71,7 +77,7 @@ def test_later_selective_update_preserves_application_and_customization(tmp_path
     assert "No changes" in run(*command, cwd=upstream).stdout
     repeated_adoption = run(
         sys.executable,
-        str(upstream / "engineering"),
+        str(upstream / "agentic"),
         "adopt",
         str(target),
         "--minimal",
@@ -79,3 +85,6 @@ def test_later_selective_update_preserves_application_and_customization(tmp_path
     )
     assert repeated_adoption.returncode == 0, repeated_adoption.stderr
     assert "No changes" in repeated_adoption.stdout
+    assert (target / metadata / "install.json").is_file()
+    if metadata == ".starter":
+        assert not (target / ".agentic-setup").exists()

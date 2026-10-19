@@ -14,6 +14,6 @@ if sys.version_info < (3, 11):
 
 sys.dont_write_bytecode = True
 
-from starter.cli import main
+from agentic_setup.cli import main
 
 sys.exit(main())
