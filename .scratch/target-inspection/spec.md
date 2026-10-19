@@ -1,6 +1,6 @@
 # Read-only target inspection
 
-Status: in progress
+Status: implemented and reviewed locally; awaiting publication
 
 ## Scope
 
@@ -33,3 +33,24 @@ Assert no target mutations. Run native checks and committed-diff Standards/Spec 
 
 No apply mode, JSON API, online freshness checks, automatic skill updates, profiles,
 or unified onboarding. No remote publication or merge implied by this feature.
+
+## Results
+
+`make check` after review correction: Ruff lint/format, mypy and 30 tests passed
+(58.27 seconds). New tests cover real archived v2, ordinary non-Git setup,
+three-way convention comparison, both metadata layouts, recorded/missing/duplicate
+skills, malformed records/configuration and symlink refusal. Snapshot assertions
+verify target contents remain unchanged; a package script that would write a file
+is never executed. CLI behavior tests were reproduced red before implementation.
+
+Additional CLI smoke verified unborn Git, nested workspace recommendations,
+regular-file target rejection, conflicting metadata, self-inspection and the local
+HumanLayer revision record. Six local documentation links passed.
+
+Matt Standards review found directory traversal before skill-entry symlink validation
+and duplicated inventory parsing. The shared bounded skill inventory resolves both;
+the new symlink-without-SKILL.md regression failed before correction and passes now.
+Standards and Spec follow-up on a1e1485...1af2112 report zero remaining findings.
+
+No remote publication, live target migration or online freshness check performed.
+The pre-existing untracked .agentic-setup skill records were preserved unchanged.

@@ -1,9 +1,9 @@
 # Inspect a target workspace
 
-Status: in progress
+Status: implemented and reviewed locally; awaiting publication
 
-- [ ] Report setup and recommend the applicable next step.
-- [ ] Compare conventions while identifying project-owned changes.
-- [ ] Inventory skills and recorded revisions without online checks.
-- [ ] Verify legacy detection, safety and read-only behavior.
-- [ ] Document, run checks and review the committed feature.
+- [x] Report setup and recommend the applicable next step.
+- [x] Compare conventions while identifying project-owned changes.
+- [x] Inventory skills and recorded revisions without online checks.
+- [x] Verify legacy detection, safety and read-only behavior.
+- [x] Document, run checks and review the committed feature.
