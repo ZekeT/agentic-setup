@@ -1,6 +1,6 @@
 # Agentic Setup naming
 
-Status: in progress
+Status: implemented and reviewed; publication in progress
 
 ## Problem Statement
 
@@ -42,3 +42,17 @@ retagging v3.0.0 or renaming the active local workspace directory.
 ## Delivery
 
 See [implementation ticket](issues/01-standardize-naming.md).
+
+## Verification
+
+`make check`: Ruff lint/format, mypy and 17 tests passed (38.61 seconds).
+The renamed-command test failed before the rename; the legacy-metadata update case
+failed before compatibility support. Both pass. Actual published v3.0.0 initialization
+and pinned HumanLayer installation followed by renamed guidance update, skill
+reinstallation and adoption preserved custom guidance, skill pins and licenses.
+Repeated operations are no-ops. Ten local doc links and CLI help passed.
+
+Matt Standards and Spec review of c8a1831...8921451 reported zero findings each.
+GitHub repository is now ZekeT/agentic-setup; origin and PR #56 use the new name.
+The PR description includes the rename and these results. Native local workspace
+path and immutable published tags retain their existing names. No merge performed.
