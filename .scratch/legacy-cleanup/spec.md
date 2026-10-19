@@ -1,6 +1,6 @@
 # Bounded legacy cleanup
 
-Status: implementing
+Status: implemented and reviewed; live apply pending user approval
 
 Retire the leftover .engineering directory and optionally
 .scratch/agentic-setup-adoption after adoption. Follow docs/product-direction.md.
@@ -27,3 +27,7 @@ Testing uses the established public CLI and filesystem outcomes in disposable Gi
 projects. Inject filesystem failure only for rollback coverage. Verify read-only
 preview, archival, symlinks, stale metadata, scope, failure, repeated apply and HTML.
 No real target apply or application checks are authorized. Generate UC3 preview only.
+
+Validation: make check passed (87 tests), including 11 cleanup cases.
+Standards and Spec reviews have no remaining findings after corrections.
+UC3 preview-005.html generated read-only; no live cleanup or application tests run.
