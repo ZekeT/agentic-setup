@@ -56,8 +56,12 @@ For a readable before/after report, add `--html` with a new filename outside the
 target workspace:
 
 ```bash
-./agentic adopt /path/to/project --minimal --html /tmp/adoption-preview.html
+./agentic adopt /path/to/project --minimal --html migrations/adoption-preview-1.html
 ```
+
+Run this from the Agentic Setup workspace. `migrations/` is the local reports folder;
+`/migrations/` would mean a directory at the filesystem root. Generated reports are
+ignored by Git.
 
 Open the saved HTML locally. It shows conflicts first, change counts, preservation
 notes and expandable side-by-side file comparisons. Blocked previews still save a

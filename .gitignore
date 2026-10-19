@@ -60,3 +60,7 @@ Thumbs.db
 !.env.template
 /.claude/skills/*
 # engineering:integration:end
+
+# Local target-project preview reports; keep their contents out of this repository.
+/migrations/*
+!/migrations/README.md
