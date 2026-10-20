@@ -1,311 +1,170 @@
-"""Explicit skill operations preserve project work through the external CLI."""
+"""Frozen plan updates replace the retired custom skill ownership contract."""
 
 import json
 
 import pytest
-from test_inspection import snapshot
-from test_transition import cli, run
-from test_updates import commit
+from skill_support import saved_plan, source_repo, target_repo
+from test_transition import cli
 
 
-def source_repo(tmp_path):
-    source = tmp_path / "source"
-    skill = source / "plugins/show-me/skills/show-me"
-    skill.mkdir(parents=True)
-    (skill / "SKILL.md").write_text("---\nname: show-me\n---\nOriginal presentation\n")
-    (skill / "old.md").write_text("Old support\n")
-    (source / "LICENSE").write_text("Fixture license\n")
-    run("git", "init", "-q", cwd=source)
-    revision = commit(source, "initial upstream")
-    return source, skill, revision
-
-
-def target_repo(tmp_path):
-    target = tmp_path / "app"
-    target.mkdir()
-    (target / "app.txt").write_text("Project work\n")
-    run("git", "init", "-q", cwd=target)
-    commit(target, "project baseline")
-    return target
-
-
-def apply(*args):
-    preview = cli(*args)
-    assert preview.returncode == 0, preview.stderr + preview.stdout
-    token = preview.stdout.split("PREVIEW ")[1].splitlines()[0]
-    result = cli(*args, "--apply", "--expect", token)
-    assert result.returncode == 0, result.stderr + result.stdout
-    return result
-
-
-def test_install_accepts_explicit_checkout_head_and_records_files(tmp_path):
-    source, skill, revision = source_repo(tmp_path)
-    target = target_repo(tmp_path)
-    command = ["skills", "install", target, "--from", source, "--bundle", "show-me"]
-    before = snapshot(target)
-    preview = cli(*command)
-    assert preview.returncode == 0, preview.stderr
-    assert revision in preview.stdout
-    assert snapshot(target) == before
-    apply(*command)
-    record = json.loads((target / ".agentic-setup/skills.json").read_text())["show-me"]
-    assert record["commit"] == revision
-    assert ".claude/skills/show-me/SKILL.md" in record["files"]
-    assert (target / ".claude/skills/show-me/SKILL.md").read_bytes() == (
-        skill / "SKILL.md"
-    ).read_bytes()
-    assert "No changes" in cli(*command).stdout
-
-
-def test_update_replaces_unchanged_files_and_preserves_project_additions(tmp_path):
-    source, skill, _ = source_repo(tmp_path)
-    target = target_repo(tmp_path)
-    apply("skills", "install", target, "--from", source, "--bundle", "show-me")
-    extra = target / ".claude/skills/show-me/team.md"
-    extra.write_text("Keep team addition\n")
-    commit(target, "installed skill and team addition")
-    (skill / "SKILL.md").write_text("---\nname: show-me\n---\nUpdated presentation\n")
-    (skill / "old.md").unlink()
-    (skill / "new.md").write_text("New support\n")
-    revision = commit(source, "new upstream revision")
-    before = snapshot(target)
-    command = ["skills", "update", target, "--from", source, "--bundle", "show-me"]
-    preview = cli(*command)
-    assert preview.returncode == 0, preview.stderr
-    assert snapshot(target) == before
-    apply(*command)
-    assert not (target / ".claude/skills/show-me/old.md").exists()
-    assert (target / ".claude/skills/show-me/new.md").read_text() == "New support\n"
-    assert extra.read_text() == "Keep team addition\n"
-    assert (target / "app.txt").read_text() == "Project work\n"
-    assert (
-        json.loads((target / ".agentic-setup/skills.json").read_text())["show-me"][
-            "commit"
-        ]
-        == revision
-    )
-    assert "No changes" in cli(*command).stdout
-
-
-def test_default_fetch_resolves_latest_and_pinned_replay(tmp_path, monkeypatch):
-    source, _, revision = source_repo(tmp_path)
-    target = target_repo(tmp_path)
-    # Redirect only the transport URL, using real Git fetch/checkout and no network.
-    monkeypatch.setenv("GIT_CONFIG_COUNT", "1")
-    monkeypatch.setenv("GIT_CONFIG_KEY_0", f"url.{source.as_uri()}.insteadOf")
-    monkeypatch.setenv("GIT_CONFIG_VALUE_0", "https://github.com/humanlayer/skills.git")
-    result = cli("skills", "install", target, "--bundle", "show-me")
-    assert result.returncode == 0, result.stderr
-    assert revision in result.stdout
-    token = result.stdout.split("PREVIEW ")[1].splitlines()[0]
-    applied = cli(
-        "skills",
-        "install",
-        target,
-        "--bundle",
-        "show-me",
-        "--ref",
-        revision,
-        "--apply",
-        "--expect",
-        token,
-    )
-    assert applied.returncode == 0, applied.stderr
-    assert (
-        json.loads((target / ".agentic-setup/skills.json").read_text())["show-me"][
-            "commit"
-        ]
-        == revision
+def stage(tmp_path, target, source, name="plan.json", operation="install"):
+    return saved_plan(
+        cli(
+            "skills",
+            operation,
+            target,
+            "--from",
+            source,
+            "--bundle",
+            "show-me",
+            "--plan",
+            tmp_path / name,
+        )
     )
 
 
-@pytest.mark.parametrize("change", ["edit", "delete", "collision"])
-def test_update_conflicts_preserve_local_work(tmp_path, change):
-    source, skill, _ = source_repo(tmp_path)
+@pytest.mark.parametrize("change", ["target", "new-file", "mode", "plan", "baseline"])
+def test_stale_plan_is_refused_without_target_writes(tmp_path, installer, change):
+    source, _, _ = source_repo(tmp_path)
     target = target_repo(tmp_path)
-    apply("skills", "install", target, "--from", source, "--bundle", "show-me")
-    installed = target / ".claude/skills/show-me/old.md"
-    if change == "edit":
-        installed.write_text("Local customization\n")
-    elif change == "delete":
-        installed.unlink()
+    old = target / ".claude/skills/show-me"
+    old.mkdir(parents=True)
+    (old / "SKILL.md").write_text("---\nname: show-me\n---\nOriginal local")
+    plan, token = stage(tmp_path, target, source)
+    if change == "target":
+        (old / "SKILL.md").write_text("Changed local")
+    elif change == "new-file":
+        (old / "new.txt").write_text("New work")
+    elif change == "mode":
+        (old / "SKILL.md").chmod(0o700)
+    elif change == "baseline":
+        from test_updates import commit
+
+        commit(target, "new baseline")
     else:
-        (target / ".claude/skills/show-me/new.md").write_text("Project-owned content\n")
-    commit(target, "intentional project customization")
-    (skill / "SKILL.md").write_text("---\nname: show-me\n---\nNew upstream\n")
-    (skill / "new.md").write_text("Upstream addition\n")
-    commit(source, "upstream change")
-    before = snapshot(target)
+        doc = json.loads(plan.read_text())
+        doc["sources"]["show-me"] = "modified input"
+        plan.write_text(json.dumps(doc))
+    current = (old / "SKILL.md").read_bytes()
     result = cli(
-        "skills",
-        "update",
-        target,
-        "--from",
-        source,
-        "--bundle",
-        "show-me",
-        "--apply",
-        "--expect",
-        "unused",
+        "skills", "install", target, "--plan", plan, "--apply", "--expect", token
     )
-    assert result.returncode == 1
-    assert "CONFLICT" in result.stdout
-    assert snapshot(target) == before
+    assert result.returncode != 0
+    assert (old / "SKILL.md").read_bytes() == current
+    assert not (target / ".agents").exists()
+    assert not (tmp_path / "backups").exists()
 
 
-@pytest.mark.parametrize("metadata", [".agentic-setup", ".starter"])
-def test_legacy_record_can_be_verified_before_update(tmp_path, metadata):
-    source, skill, revision = source_repo(tmp_path)
-    target = target_repo(tmp_path)
-    apply("skills", "install", target, "--from", source, "--bundle", "show-me")
-    if metadata == ".starter":
-        (target / ".agentic-setup").rename(target / metadata)
-    record = target / metadata / "skills.json"
-    record.write_text(
-        json.dumps({"show-me": {"source": "humanlayer/skills", "commit": revision}})
-    )
-    commit(target, "commit-only older installation")
-    blocked = cli("skills", "update", target, "--from", source, "--bundle", "show-me")
-    assert blocked.returncode == 1 and "no file baseline" in blocked.stdout
-    apply(
-        "skills",
-        "install",
-        target,
-        "--from",
-        source,
-        "--bundle",
-        "show-me",
-        "--ref",
-        revision,
-    )
-    assert "files" in json.loads(record.read_text())["show-me"]
-    commit(target, "verified baseline")
-    (skill / "old.md").write_text("Updated support\n")
-    commit(source, "later upstream")
-    apply("skills", "update", target, "--from", source, "--bundle", "show-me")
-    assert (target / ".claude/skills/show-me/old.md").read_text() == "Updated support\n"
-
-
-def test_latest_moving_between_preview_and_apply_requires_new_token(
-    tmp_path, monkeypatch
+def test_customized_unrecorded_skill_is_backed_up_and_only_selected_records_retire(
+    tmp_path, installer
 ):
-    source, skill, revision = source_repo(tmp_path)
-    target = target_repo(tmp_path)
-    monkeypatch.setenv("GIT_CONFIG_COUNT", "1")
-    monkeypatch.setenv("GIT_CONFIG_KEY_0", f"url.{source.as_uri()}.insteadOf")
-    monkeypatch.setenv("GIT_CONFIG_VALUE_0", "https://github.com/humanlayer/skills.git")
-    command = ["skills", "install", target, "--bundle", "show-me"]
-    preview = cli(*command)
-    assert preview.returncode == 0, preview.stderr
-    token = preview.stdout.split("PREVIEW ")[1].splitlines()[0]
-    (skill / "old.md").write_text("Upstream moved\n")
-    commit(source, "new latest")
-    before = snapshot(target)
-    result = cli(*command, "--apply", "--expect", token)
-    assert result.returncode == 1 and "Stale preview" in result.stderr
-    assert snapshot(target) == before
-    pinned = cli(*command, "--ref", revision, "--apply", "--expect", token)
-    assert pinned.returncode == 0, pinned.stderr
-    assert (target / ".claude/skills/show-me/old.md").read_text() == "Old support\n"
-
-
-def test_update_refuses_unowned_paths_in_metadata(tmp_path):
     source, _, _ = source_repo(tmp_path)
     target = target_repo(tmp_path)
-    apply("skills", "install", target, "--from", source, "--bundle", "show-me")
-    record_path = target / ".agentic-setup/skills.json"
-    records = json.loads(record_path.read_text())
-    records["show-me"]["files"]["app.txt"] = "0" * 64
-    record_path.write_text(json.dumps(records))
-    commit(target, "invalid metadata")
-    before = snapshot(target)
+    folder = target / ".claude/skills/show-me"
+    folder.mkdir(parents=True)
+    (folder / "SKILL.md").write_text(
+        "---\nname: show-me\n---\nCustom local presentation"
+    )
+    (folder / "team.txt").write_text("Local extra")
+    metadata = target / ".agentic-setup"
+    metadata.mkdir()
+    (metadata / "skills.json").write_text(
+        json.dumps(
+            {
+                "show-me": {"source": "humanlayer/skills", "commit": "old"},
+                "tdd": {"source": "mattpocock/skills", "commit": "keep"},
+            }
+        )
+    )
+    (metadata / "install.json").write_text("untouched convention baseline")
+    plan, token = stage(tmp_path, target, source)
+    assert "team.txt" in plan.read_text()
+    assert (folder / "team.txt").exists()
     result = cli(
-        "skills",
-        "update",
-        target,
-        "--from",
-        source,
-        "--bundle",
-        "show-me",
-        "--apply",
-        "--expect",
-        "unused",
+        "skills", "install", target, "--plan", plan, "--apply", "--expect", token
     )
-    assert result.returncode == 1
-    assert "Invalid owned file hashes" in result.stderr
-    assert snapshot(target) == before
+    assert result.returncode == 0, result.stderr
+    backup = tmp_path / "backups" / token / "before"
+    assert (backup / ".claude/skills/show-me/team.txt").read_text() == "Local extra"
+    assert "Custom local" in (backup / ".claude/skills/show-me/SKILL.md").read_text()
+    assert not (folder / "team.txt").exists()
+    assert (metadata / "install.json").read_text() == "untouched convention baseline"
+    assert set(json.loads((metadata / "skills.json").read_text())) == {"tdd"}
 
 
-def test_legacy_baseline_verification_refuses_modified_skill(tmp_path):
-    source, _, revision = source_repo(tmp_path)
+def test_update_is_frozen_and_unrelated_project_edits_survive(tmp_path, installer):
+    source, skill, _ = source_repo(tmp_path)
     target = target_repo(tmp_path)
-    apply("skills", "install", target, "--from", source, "--bundle", "show-me")
-    (target / ".agentic-setup/skills.json").write_text(
-        json.dumps({"show-me": {"source": "humanlayer/skills", "commit": revision}})
+    plan, token = stage(tmp_path, target, source)
+    assert (
+        cli(
+            "skills", "install", target, "--plan", plan, "--apply", "--expect", token
+        ).returncode
+        == 0
     )
-    (target / ".claude/skills/show-me/old.md").write_text("Local change\n")
-    commit(target, "older customized skill")
-    before = snapshot(target)
-    result = cli("skills", "install", target, "--from", source, "--bundle", "show-me")
-    assert result.returncode == 1
-    assert "cannot establish a file baseline" in result.stdout
-    assert snapshot(target) == before
+    (skill / "support.md").write_text("Reviewed update")
+    from test_updates import commit
+
+    commit(source, "update")
+    plan, token = stage(tmp_path, target, source, "update.json", "update")
+    (target / "app.txt").write_text("Unrelated dirty work")
+    installer.unlink()
+    result = cli(
+        "skills", "update", target, "--plan", plan, "--apply", "--expect", token
+    )
+    assert result.returncode == 0, result.stderr
+    assert (
+        target / ".agents/skills/show-me/support.md"
+    ).read_text() == "Reviewed update"
+    assert (target / "app.txt").read_text() == "Unrelated dirty work"
+    assert (
+        cli(
+            "skills", "update", target, "--plan", plan, "--apply", "--expect", token
+        ).returncode
+        != 0
+    )
 
 
-def test_update_refuses_legacy_command_name_collision(tmp_path):
+def test_ordinary_apply_failure_restores_original_layout(
+    tmp_path, installer, monkeypatch, capsys
+):
+    import sys
+    from pathlib import Path
+
+    from agentic_setup.cli import main
+
     source, _, _ = source_repo(tmp_path)
     target = target_repo(tmp_path)
-    apply("skills", "install", target, "--from", source, "--bundle", "show-me")
-    (target / ".claude/commands").mkdir()
-    (target / ".claude/commands/show-me.md").write_text("Team command\n")
-    commit(target, "conflicting local command")
-    before = snapshot(target)
-    result = cli("skills", "update", target, "--from", source, "--bundle", "show-me")
-    assert result.returncode == 1
-    assert "command name collision" in result.stdout
-    assert snapshot(target) == before
+    old = target / ".claude/skills/show-me"
+    old.mkdir(parents=True)
+    (old / "SKILL.md").write_text("---\nname: show-me\n---\nOriginal")
+    plan, token = stage(tmp_path, target, source)
+    original = Path.rename
 
+    def fail_lock(path, destination):
+        if path.name == "skills-lock.json" and "proposed" in path.parts:
+            raise OSError("injected failure")
+        return original(path, destination)
 
-def test_update_does_not_delete_project_file_claimed_by_target_metadata(tmp_path):
-    import hashlib
-
-    source, skill, _ = source_repo(tmp_path)
-    target = target_repo(tmp_path)
-    apply("skills", "install", target, "--from", source, "--bundle", "show-me")
-    project_path = ".claude/skills/show-me/team.md"
-    (target / project_path).write_text("Project-owned extension\n")
-    record_path = target / ".agentic-setup/skills.json"
-    records = json.loads(record_path.read_text())
-    records["show-me"]["files"][project_path] = hashlib.sha256(
-        (target / project_path).read_bytes()
-    ).hexdigest()
-    record_path.write_text(json.dumps(records))
-    commit(target, "project file falsely claimed by metadata")
-    (skill / "old.md").unlink()
-    commit(source, "remove old upstream support")
-    before = snapshot(target)
-    result = cli("skills", "update", target, "--from", source, "--bundle", "show-me")
-    assert result.returncode == 1
-    assert "upstream ownership" in result.stdout
-    assert snapshot(target) == before
-
-
-def test_update_preserves_removed_files_when_historical_ownership_is_unavailable(
-    tmp_path,
-):
-    source, skill, _ = source_repo(tmp_path)
-    target = target_repo(tmp_path)
-    apply("skills", "install", target, "--from", source, "--bundle", "show-me")
-    commit(target, "installed skill")
-    (skill / "old.md").unlink()
-    commit(source, "upstream removed support")
-    shallow = tmp_path / "shallow"
-    cloned = run(
-        "git", "clone", "--quiet", "--depth", "1", source.as_uri(), str(shallow)
+    monkeypatch.setattr(Path, "rename", fail_lock)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "agentic",
+            "skills",
+            "install",
+            str(target),
+            "--plan",
+            str(plan),
+            "--apply",
+            "--expect",
+            token,
+        ],
     )
-    assert cloned.returncode == 0, cloned.stderr
-    before = snapshot(target)
-    result = cli("skills", "update", target, "--from", shallow, "--bundle", "show-me")
-    assert result.returncode == 1
-    assert "cannot verify upstream ownership" in result.stdout
-    assert snapshot(target) == before
+    assert main() == 1
+    assert "rolled back" in capsys.readouterr().err
+    assert old.is_dir() and not old.is_symlink()
+    assert (old / "SKILL.md").read_text().endswith("Original")
+    assert not (target / ".agents").exists()
+    assert not (target / "skills-lock.json").exists()

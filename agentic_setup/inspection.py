@@ -8,7 +8,7 @@ from typing import Any
 from .adopt import REGION, SOURCE, metadata_directory
 from .discovery import native_commands, standards
 from .files import Plan, checked_root, digest, git, path_at
-from .skills import BUNDLES, skill_locations
+from .skills import BUNDLES, external_records, skill_locations
 from .templates import compare_template
 
 
@@ -73,17 +73,21 @@ def skill_report(plan: Plan, metadata: str) -> list[str]:
         ):
             raise ValueError(f"Invalid skill revision record: {name}")
     installed = skill_locations(plan)
+    external = external_records(plan)
     selected = {
         name: (source, revision)
         for source, revision, names in BUNDLES.values()
         for name in names
     }
     lines = ["Skills (recorded revisions; installed contents not verified):"]
-    for name in sorted(installed.keys() | records.keys()):
+    for name in sorted(installed.keys() | records.keys() | external.keys()):
         locations = installed.get(name, [])
         record = records.get(name)
         if not locations:
             status = "recorded but missing"
+        elif name in external:
+            entry = external[name]
+            status = f"external lock {entry['source']} ({entry['sourceType']}); content hash {entry['computedHash']}"
         elif record is None:
             status = "unrecorded revision"
         else:

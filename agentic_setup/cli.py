@@ -7,12 +7,13 @@ import sys
 from pathlib import Path
 
 from .adopt import plan_adoption
-from .files import baseline, checked_root
+from .cleanup import run_cleanup
 from .freshness import check_skills
 from .inspection import inspect_target
+from .preview import next_report, report_destination, write_preview
 from .setup import SCOPES, initialize, plan_update
-from .skills import BUNDLES, plan_skills
-from .sources import skill_source
+from .skill_stage import run_skills
+from .skills import BUNDLES
 
 
 def main() -> int:
@@ -28,6 +29,15 @@ def main() -> int:
     adopt = commands.add_parser("adopt")
     adopt.add_argument("target", type=Path)
     adopt.add_argument("--minimal", action="store_true")
+    adopt.add_argument(
+        "--resolutions", type=Path, help="explicit external project resolution plan"
+    )
+    adopt.add_argument(
+        "--html",
+        nargs="?",
+        const="auto",
+        help="save HTML; default: migrations/<workspace>/preview-NNN.html",
+    )
     adopt.add_argument("--apply", action="store_true")
     adopt.add_argument(
         "--check", help="explicit native command to run before and after apply"
@@ -35,12 +45,25 @@ def main() -> int:
     adopt.add_argument(
         "--expect", help="preview token; rejects changed content or source"
     )
+    cleanup = commands.add_parser("cleanup", help="archive dormant legacy leftovers")
+    cleanup.add_argument("target", type=Path)
+    cleanup.add_argument("--adoption-notes", action="store_true")
+    cleanup.add_argument("--archive", type=Path)
+    cleanup.add_argument("--html", nargs="?", const="auto")
+    cleanup.add_argument("--apply", action="store_true")
+    cleanup.add_argument("--expect")
     init = commands.add_parser("init")
     init.add_argument("target", type=Path)
     init.add_argument("--python-seed", action="store_true")
     update = commands.add_parser("update")
     update.add_argument("target", type=Path)
     update.add_argument("--only", choices=SCOPES, required=True)
+    update.add_argument(
+        "--html",
+        nargs="?",
+        const="auto",
+        help="save HTML; default: migrations/<workspace>/preview-NNN.html",
+    )
     update.add_argument("--source-ref", required=True)
     update.add_argument("--apply", action="store_true")
     update.add_argument("--expect")
@@ -64,11 +87,37 @@ def main() -> int:
             "--ref",
             help="full upstream commit hash; defaults to latest default-branch HEAD",
         )
-        skills.add_argument("--bundle", choices=BUNDLES, default="matt")
+        skills.add_argument("--bundle", choices=BUNDLES, action="append")
+        skills.add_argument(
+            "--plan",
+            type=Path,
+            help="saved proposal: output during preview, input during apply",
+        )
+        skills.add_argument(
+            "--html",
+            nargs="?",
+            const="auto",
+            help="save HTML; default: migrations/<workspace>/preview-NNN.html",
+        )
         skills.add_argument("--apply", action="store_true")
         skills.add_argument("--expect")
     args = parser.parse_args()
     try:
+        html_path = getattr(args, "html", None)
+        if html_path is not None:
+            if args.apply:
+                raise ValueError("--html is preview-only; omit --apply")
+            if html_path != "auto":
+                html_path = report_destination(Path(html_path), args.target)
+        if args.command == "cleanup":
+            return run_cleanup(
+                args.target,
+                args.archive,
+                args.adoption_notes,
+                html_path,
+                args.apply,
+                args.expect,
+            )
         if args.command == "skills" and args.skill_command == "check":
             report, status = check_skills(args.target, args.bundle)
             print(report)
@@ -83,16 +132,19 @@ def main() -> int:
             )
             return 0
         if args.command == "adopt":
-            plan = plan_adoption(args.target, args.minimal)
+            plan = plan_adoption(args.target, args.minimal, args.resolutions)
         elif args.command == "skills":
-            target = checked_root(args.target)
-            baseline(target)  # Reject invalid targets before any network activity.
-            with skill_source(
-                BUNDLES[args.bundle][0], args.checkout, args.ref
-            ) as checkout:
-                plan = plan_skills(
-                    target, checkout, args.bundle, update=args.skill_command == "update"
-                )
+            return run_skills(
+                args.target,
+                args.skill_command,
+                args.bundle,
+                args.checkout,
+                args.ref,
+                args.plan,
+                html_path,
+                args.apply,
+                args.expect,
+            )
         else:
             plan = plan_update(args.target, args.only, args.source_ref)
         for note in plan.notes:
@@ -100,6 +152,11 @@ def main() -> int:
         for conflict in plan.conflicts:
             print(f"CONFLICT {conflict}")
         print(f"PREVIEW {plan.token()}")
+        if html_path is not None:
+            if html_path == "auto":
+                html_path = next_report(plan.root, getattr(args, "resolutions", None))
+            write_preview(plan, html_path)
+            print(f"HTML preview: {html_path}")
         if plan.conflicts:
             return 1
         if not plan.changes:

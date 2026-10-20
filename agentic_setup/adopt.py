@@ -8,6 +8,7 @@ from typing import Any
 
 from .discovery import native_commands, standards
 from .files import Plan, baseline, checked_root, digest, encoded, git
+from .resolutions import apply_resolutions
 
 SOURCE = Path(__file__).resolve().parent
 REGION = re.compile(
@@ -146,7 +147,7 @@ def active_files(root: Path) -> set[str]:
 
 
 def inspect_wiring(plan: Plan) -> None:
-    pending = list(active_files(plan.root))
+    pending = list(active_files(plan.root) | plan.resolved)
     seen = set()
     while pending:
         name = pending.pop()
@@ -250,7 +251,7 @@ def add_payload(plan: Plan) -> None:
     )
 
 
-def plan_adoption(target: Path, minimal: bool) -> Plan:
+def plan_adoption(target: Path, minimal: bool, resolutions: Path | None = None) -> Plan:
     target = checked_root(target)
     if (
         target == SOURCE.parent
@@ -271,7 +272,15 @@ def plan_adoption(target: Path, minimal: bool) -> Plan:
     if minimal and plan.inspect(f"{metadata_directory(plan)}/install.json") is None:
         legacy_changes(plan)
     add_payload(plan)
+    if resolutions is not None:
+        apply_resolutions(
+            plan, resolutions, set(plan.observed) | active_files(plan.root)
+        )
     inspect_wiring(plan)
+    if plan.recovery_root is not None:
+        plan.notes.append(
+            f"RECOVERY {plan.recovery_root / plan.token()}: originals saved only on apply"
+        )
     # Disconnect callers before deleting their implementations.
     plan.changes = dict(sorted(plan.changes.items(), key=lambda item: item[1] is None))
     plan.notes.append(

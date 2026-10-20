@@ -72,6 +72,9 @@ class Plan:
     changes: dict[str, bytes | None] = field(default_factory=dict)
     notes: list[str] = field(default_factory=list)
     conflicts: list[str] = field(default_factory=list)
+    inputs: dict[str, str] = field(default_factory=dict)
+    resolved: set[str] = field(default_factory=set)
+    recovery_root: Path | None = None
 
     def inspect(self, name: str) -> bytes | None:
         if name not in self.observed:
@@ -96,6 +99,8 @@ class Plan:
                     "before": {n: digest(b) for n, b in self.observed.items()},
                     "after": {n: digest(b) for n, b in self.changes.items()},
                     "conflicts": self.conflicts,
+                    "inputs": self.inputs,
+                    "resolved": sorted(self.resolved),
                 }
             )
         )
@@ -125,13 +130,19 @@ class Plan:
             raise ValueError(f"Commit affected local edits before apply: {deleted}")
         # Existing changed content must be recoverable from this exact commit.
         for name in self.changes:
-            if git(self.root, "status", "--porcelain", "--", name):
-                raise ValueError(f"Commit affected local edits before apply: {name}")
-            if self.observed[name] is not None:
-                if not git(self.root, "ls-files", "--", name):
+            tracked = bool(git(self.root, "ls-files", "--", name))
+            explicit_local = name in self.resolved and self.recovery_root is not None
+            if tracked or not explicit_local:
+                if git(self.root, "status", "--porcelain", "--", name):
                     raise ValueError(
-                        f"Untracked content must be preserved manually: {name}"
+                        f"Commit affected local edits before apply: {name}"
                     )
+            if self.observed[name] is not None and not tracked and not explicit_local:
+                raise ValueError(
+                    f"Untracked content requires an explicit resolution: {name}"
+                )
+        if self.recovery_root is not None:
+            save_recovery(self)
         write_files(self.root, self.changes)
 
 
@@ -174,3 +185,41 @@ def write_files(root: Path, changes: dict[str, bytes | None]) -> None:
         for directory in reversed(created):
             directory.rmdir()
         raise
+
+
+def save_recovery(plan: Plan) -> None:
+    """Save captured originals outside the target before a resolved plan can write."""
+    assert plan.recovery_root is not None
+    folder = checked_root(plan.recovery_root / plan.token())
+    if folder == plan.root or folder.is_relative_to(plan.root):
+        raise ValueError("Recovery folder must be outside the target workspace")
+    if folder.exists():
+        raise ValueError(
+            "Recovery snapshot already exists; inspect it before retrying apply"
+        )
+    folder.mkdir(parents=True, mode=0o700)
+    files = {}
+    for name, after in plan.changes.items():
+        before = plan.observed[name]
+        mode = None
+        if before is not None:
+            mode = path_at(plan.root, name).stat().st_mode & 0o777
+            saved = path_at(folder / "before", name)
+            saved.parent.mkdir(parents=True, exist_ok=True)
+            saved.write_bytes(before)
+            os.chmod(saved, 0o600)
+        files[name] = {
+            "before_sha256": digest(before) if before is not None else None,
+            "after_sha256": digest(after) if after is not None else None,
+            "before_mode": mode,
+        }
+    (folder / "manifest.json").write_bytes(
+        encoded(
+            {
+                "target": str(plan.root),
+                "baseline": plan.baseline,
+                "preview": plan.token(),
+                "files": files,
+            }
+        )
+    )
